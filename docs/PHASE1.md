@@ -38,6 +38,6 @@ Each becomes a module with its existing contract, demo data, detail view, change
 ## Then
 
 - [ ] Layout parity check: screenshots of the console and the current wall side by side at 7680×2160 and 3200×1800
-- [ ] Release path: build on rackmain1 and install `dist/` beside the feeds with plan / apply / verify / undo, like `wall-release` (`deploy/rackmain1-release.sh`, `console-release`)
+- [x] Release path: `console-release` builds on rackmain1 and installs `dist/` as wall-ui/console/ with plan / apply / verify / undo ([RELEASE.md](RELEASE.md))
 - [ ] Switch Lively to the console layout; keep the old wall as a fallback for a week
 - [ ] A layout editor (drag panels, pick modules) on top of the validated layout format
