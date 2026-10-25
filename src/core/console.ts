@@ -81,6 +81,8 @@ export class Console {
     this.stage.append(this.buildOverlay());
     root.append(this.stage);
     if (this.paged) {
+      // Pages layouts are for touch screens: no pointer arrow anywhere on the page.
+      document.documentElement.classList.add("touch-ui");
       this.showPage(0);
       // Any touch restarts the idle countdown back to the first page.
       root.addEventListener("pointerdown", () => this.armIdle(), { capture: true });
