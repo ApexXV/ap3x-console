@@ -1,0 +1,17 @@
+.wx-now { display: flex; align-items: center; gap: .6em; }
+.wx-temp { font-family: var(--display); font-size: 2.6em; line-height: 1; color: var(--text); }
+.wx-copy { display: flex; flex-direction: column; min-width: 0; }
+.wx-copy span { font-size: .8em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wx-copy small { color: var(--muted); font-size: .55em; letter-spacing: .14em; }
+.wx-now + .tile-row { margin: .35em 0; }
+.wx-days { flex: 1 1 0; min-height: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: .3em; }
+.wx-day { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .1em; padding: .2em; background: rgba(7, 23, 34, .5); min-width: 0; }
+.wx-day span { color: var(--muted); font-size: .5em; letter-spacing: .14em; }
+.wx-day b { font-family: var(--display); font-size: .95em; }
+.wx-day b small { margin-left: .3em; color: var(--dim); font-size: .7em; }
+.wx-day em { font-style: normal; color: var(--ap3x-cyan); font-size: .45em; letter-spacing: .1em; }
+.wx-day p { margin: 0; color: var(--muted); font-size: .45em; text-align: center; }
+.wx-days.is-large { height: 100%; }
+.wx-days.is-large .wx-day b { font-size: 1.3em; }
+.wx-hourly { display: grid; grid-template-rows: 4em auto; gap: .2em; }
+.wx-marks { display: flex; justify-content: space-between; color: var(--dim); font-family: var(--mono); font-size: .45em; }

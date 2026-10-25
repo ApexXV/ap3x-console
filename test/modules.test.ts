@@ -101,3 +101,52 @@ describe("contracts", () => {
     expect(parseFm({ schema_version: "x" }, NOW).state).toBe("INVALID");
   });
 });
+
+describe("lab touch contracts", () => {
+  it("lab-node: live, unreachable, stale, and rates in bits", async () => {
+    const { parseLabNode, rateText } = await import("../src/modules/labnode/parse");
+    const { uptimeText } = await import("../src/modules/labnode");
+    const base = { schema_version: "AP3X-LAB-NODE-1", generated_at: new Date(NOW - 5_000).toISOString(), node: "labpi1", state: "LIVE",
+      interfaces: [{ name: "wlan0", kind: "wifi", up: true, rx_bps: 125_000, tx_bps: 0 }, { name: "x", kind: "warp", up: "yes" }],
+      history: { step_s: 10, rx_bps: [1, "2", null], tx_bps: "nope" } };
+    const live = parseLabNode(base, NOW);
+    expect(live.status).toBe("LIVE");
+    expect(live.ifaces[1]).toMatchObject({ kind: "other", up: false });
+    expect(live.history).toEqual({ stepS: 10, rx: [1, 2, 0], tx: [] });
+    expect(parseLabNode({ ...base, state: "UNREACHABLE" }, NOW).status).toBe("UNREACHABLE");
+    expect(parseLabNode({ ...base, generated_at: new Date(NOW - 600_000).toISOString() }, NOW).status).toBe("STALE");
+    expect(parseLabNode({ schema_version: "NOPE" }, NOW).status).toBe("NO FEED");
+    expect(rateText(125_000)).toBe("1.0 Mb/s");
+    expect(rateText(62)).toBe("496 b/s");
+    expect(rateText(null)).toBe("—");
+    expect(uptimeText(3 * 86_400 + 4 * 3_600)).toBe("3d 4h");
+    expect(uptimeText(42 * 60)).toBe("42m");
+  });
+
+  it("home: tiles summarize each feed and ask the console for their page", () => {
+    const home = getModule("lab-home")!;
+    const ctx = context(home, home.demo!(NOW), 800);
+    ctx.settings = { ...ctx.settings, pages: { printers: "printers" } };
+    const model = home.model(ctx) as { cards: { key: string; value: string; page: string | null }[] };
+    expect(model.cards.map((c) => c.key)).toEqual(["printers", "nodes", "network"]);
+    expect(model.cards[0]!.value).toBe("3/6");
+    const body = document.createElement("div");
+    home.render(body, model, ctx);
+    let asked: string | null = null;
+    body.addEventListener("console-page", (event) => { asked = (event as CustomEvent<string>).detail; });
+    body.querySelector<HTMLButtonElement>(".home-card")!.click();
+    expect(asked).toBe("printers");
+    expect(body.querySelectorAll<HTMLButtonElement>(".home-card")[1]!.disabled).toBe(true);
+  });
+
+  it("camera: live view needs a stream URL and closes itself", async () => {
+    const { openLive, closeLive } = await import("../src/modules/camera");
+    const m = { url: "/f.jpg", mode: "live" as const, everyMs: 3000, label: "X1C", streamUrl: "/go2rtc/stream.html?src=x", liveMinutes: 1 };
+    openLive({ ...m, streamUrl: null });
+    expect(document.querySelector(".cam-live")).toBeNull();
+    openLive(m);
+    expect(document.querySelector(".cam-live iframe")!.getAttribute("src")).toBe("/go2rtc/stream.html?src=x");
+    closeLive();
+    expect(document.querySelector(".cam-live")).toBeNull();
+  });
+});

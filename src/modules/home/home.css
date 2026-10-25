@@ -1,0 +1,18 @@
+.home-hero { flex: 1 1 0; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 1em; padding: 0 .4em; }
+.home-when { display: flex; flex-direction: column; min-width: 0; }
+.home-clock { display: flex; align-items: baseline; gap: .25em; }
+.home-time { font-family: var(--display); font-size: 5.2em; line-height: .95; letter-spacing: .02em; text-shadow: 0 0 .4em rgba(56, 189, 202, .35); }
+.home-date { color: var(--ap3x-cyan); font-size: .85em; letter-spacing: .24em; margin-top: .2em; }
+.home-wx { display: flex; flex-direction: column; align-items: flex-end; text-align: right; min-width: 0; }
+.home-wx .home-place { color: var(--dim); font-size: .55em; letter-spacing: .3em; }
+.home-wx b { font-family: var(--display); font-size: 3em; line-height: 1; }
+.home-wx small { color: var(--muted); font-size: .7em; max-width: 12em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.home-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5em; }
+.home-card { --cut: .5em; clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+  display: flex; flex-direction: column; align-items: flex-start; gap: .1em; min-width: 0; min-height: 4.6em; padding: .5em .7em; cursor: pointer; text-align: left;
+  border: 0; border-left: .2em solid var(--tone); background: linear-gradient(160deg, rgba(16, 41, 54, .95), rgba(7, 23, 34, .85)); }
+.home-card:active { background: rgba(8, 126, 145, .5); }
+.home-card:disabled { cursor: default; }
+.home-card span { color: var(--dim); font-size: .55em; letter-spacing: .2em; }
+.home-card b { font-family: var(--display); font-size: 1.5em; color: var(--tone); white-space: nowrap; }
+.home-card small { color: var(--muted); font-size: .6em; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

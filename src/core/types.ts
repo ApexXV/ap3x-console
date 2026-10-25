@@ -140,4 +140,11 @@ export interface Layout {
   regionColumns: string;
   regions: LayoutRegion[];
   refreshSeconds?: number;
+  /** "columns" (default) shows every region side by side; "pages" shows one region at a time
+   *  with a touch tab bar, for small screens. */
+  navigation?: "columns" | "pages";
+  /** "compact" shrinks the top bar to one line (title, priority, clock) for small screens. */
+  chrome?: "full" | "compact";
+  /** Pages only: return to the first page after this many seconds without a touch. */
+  homeAfterSeconds?: number;
 }

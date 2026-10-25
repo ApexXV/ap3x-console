@@ -33,13 +33,15 @@ export function parseNodes(payload: unknown, now: number, expected: string[]): N
   };
 }
 
+export const NODE_STATUS_SOURCE = { id: "node-status", url: "/node-status-data/current.json", schema: "AP3X-NODE-STATUS-1", stampField: "generated_at", maxAgeMs: STALE_MS };
+
 export const nodesModule: ModuleManifest<NodesModel, { nodes: string[] }> = {
   id: "node-status",
   title: "NODES",
   description: "Online / offline state of each machine, from Tailscale with a LAN ping fallback.",
   version: "1.0.0",
   defaults: { nodes: [] },
-  sources: [{ id: "node-status", url: "/node-status-data/current.json", schema: "AP3X-NODE-STATUS-1", stampField: "generated_at", maxAgeMs: STALE_MS }],
+  sources: [NODE_STATUS_SOURCE],
 
   model: (ctx) => parseNodes(ctx.sources["node-status"]?.data, ctx.now, (ctx.settings.nodes ?? []).map((n) => String(n).toUpperCase())),
 
@@ -97,7 +99,8 @@ export const nodesModule: ModuleManifest<NodesModel, { nodes: string[] }> = {
           { name: "RACKPI1", state: "ONLINE", source: "lan", last_seen: at },
           { name: "RACKPI2", state: "ONLINE", source: "lan", last_seen: at },
           { name: "APEXTOWER", state: "ONLINE", source: "tailscale", last_seen: at },
-          { name: "LABPI1", state: "OFFLINE", source: "tailscale", last_seen: new Date(now - 26 * 3_600_000).toISOString() },
+          { name: "LABPI1", state: "ONLINE", source: "tailscale", last_seen: at },
+          { name: "LABTOUCH1", state: "OFFLINE", source: "tailscale", last_seen: new Date(now - 26 * 3_600_000).toISOString() },
         ],
       },
     };

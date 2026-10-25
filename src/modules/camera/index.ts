@@ -1,4 +1,4 @@
-import { el } from "../../core/dom";
+import { button, el } from "../../core/dom";
 import { note } from "../../core/detail";
 import { clockOf } from "../../core/format";
 import type { ModuleManifest, RunMode } from "../../core/types";
@@ -8,7 +8,7 @@ import "./camera.css";
  * short cycle, independent of the console refresh, with a scan sweep on each new frame.
  * Only the image loads; credentials stay in go2rtc's config on the host. */
 
-export interface CameraModel { url: string; mode: RunMode; everyMs: number; label: string }
+export interface CameraModel { url: string; mode: RunMode; everyMs: number; label: string; streamUrl: string | null; liveMinutes: number }
 
 const state = new WeakMap<HTMLElement, { timer: ReturnType<typeof setInterval>; lastGood: number; url: string }>();
 /** Last good frame per URL, so the chip the console redraws each refresh reflects the frame loop. */
@@ -51,21 +51,51 @@ function attach(body: HTMLElement, m: CameraModel, chipHost: () => HTMLElement |
     setChip(retained ? "RETAINED" : "FRAME OFFLINE", retained ? "warn" : "bad");
   };
   const load = () => {
-    if (m.mode === "demo") return;
+    // Skip while the panel is hidden (another page of a paged layout); the next tick catches up.
+    if (m.mode === "demo" || !body.isConnected || body.offsetParent === null) return;
     img.src = `${m.url}${m.url.includes("?") ? "&" : "?"}v=${Date.now()}`;
   };
   load();
 }
 
-export const cameraModule: ModuleManifest<CameraModel, { url: string; refreshSeconds: number; label: string }> = {
+/* Live video: go2rtc's own player page in a full-screen layer outside the console's detail view,
+ * so console refreshes don't restart the stream. It closes on CLOSE or after `liveMinutes`. */
+let live: { layer: HTMLElement; timer: ReturnType<typeof setTimeout> } | null = null;
+
+export function closeLive(): void {
+  if (!live) return;
+  clearTimeout(live.timer);
+  live.layer.remove();
+  live = null;
+}
+
+export function openLive(m: CameraModel, host: HTMLElement = document.body): void {
+  if (!m.streamUrl) return;
+  closeLive();
+  const layer = el("div", "cam-live");
+  const bar = el("div", "cam-live-bar");
+  bar.append(el("b", "", `${m.label.toUpperCase()} · LIVE`), el("span", "", `closes after ${m.liveMinutes} min`), button("CLOSE", "Close the live view", closeLive, "btn cam-live-close"));
+  const frame = el("iframe");
+  frame.src = m.streamUrl;
+  frame.title = `${m.label} live video`;
+  frame.allow = "autoplay; fullscreen";
+  layer.append(bar, frame);
+  host.append(layer);
+  live = { layer, timer: setTimeout(closeLive, m.liveMinutes * 60_000) };
+}
+
+export const cameraModule: ModuleManifest<CameraModel, { url: string; refreshSeconds: number; label: string; streamUrl: string; liveMinutes: number }> = {
   id: "camera",
   title: "CAMERA",
   description: "A camera still frame refreshed every few seconds from a frame URL such as go2rtc's frame.jpeg.",
   version: "1.0.0",
-  defaults: { url: "/go2rtc/api/frame.jpeg?src=office_cam_wall", refreshSeconds: 5, label: "Camera" },
+  defaults: { url: "/go2rtc/api/frame.jpeg?src=office_cam_wall", refreshSeconds: 5, label: "Camera", streamUrl: "", liveMinutes: 10 },
   sources: [],
 
-  model: (ctx) => ({ url: ctx.settings.url, mode: ctx.mode, everyMs: Math.max(2, ctx.settings.refreshSeconds) * 1000, label: ctx.settings.label }),
+  model: (ctx) => ({
+    url: ctx.settings.url, mode: ctx.mode, everyMs: Math.max(2, ctx.settings.refreshSeconds) * 1000, label: ctx.settings.label,
+    streamUrl: ctx.settings.streamUrl || null, liveMinutes: Math.min(60, Math.max(1, ctx.settings.liveMinutes || 10)),
+  }),
 
   render(body, m) {
     attach(body, m, () => body.closest(".panel")?.querySelector<HTMLElement>(":scope > header .chip") ?? null);
@@ -85,10 +115,12 @@ export const cameraModule: ModuleManifest<CameraModel, { url: string; refreshSec
     img.alt = `${m.label} camera frame`;
     if (m.mode !== "demo") img.src = `${m.url}${m.url.includes("?") ? "&" : "?"}v=${Date.now()}`;
     frame.append(img);
+    const sections = [m.mode === "demo" ? note("Live frames are shown on the host only.") : frame];
+    if (m.streamUrl && m.mode === "live") sections.push(button("▶ WATCH LIVE", "Open the live video stream", () => openLive(m), "btn cam-watch"));
     return {
-      title: m.label.toUpperCase(), foot: "Still frames from the host's camera relay; nothing is recorded by the console",
-      columns: "minmax(0, 1fr)", rows: "minmax(0, 1fr)",
-      sections: [m.mode === "demo" ? note("Live frames are shown on the host only.") : frame],
+      title: m.label.toUpperCase(), foot: "Still frames and live video come from the host's camera relay; nothing is recorded by the console",
+      columns: "minmax(0, 1fr)", rows: m.streamUrl && m.mode === "live" ? "minmax(0, 1fr) auto" : "minmax(0, 1fr)",
+      sections,
     };
   },
 };

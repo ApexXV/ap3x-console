@@ -22,3 +22,8 @@
 .lab-card.is-idle .lab-big b, .lab-card.is-offline .lab-big b { font-size: 2.1em; color: var(--muted); }
 .lab-card.is-error .lab-big b { font-size: 2.4em; }
 .lab-card .facts { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: auto; }
+.lab-picker { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: .3em; }
+.lab-picker .btn { min-height: 2.4em; font-size: .6em; border-bottom: .2em solid var(--tone); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lab-cards.is-single { grid-template-columns: minmax(0, 1fr); }
+.lab-cards.is-single .lab-card .facts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.lab-cards.is-single .lab-big b { font-size: 3em; }

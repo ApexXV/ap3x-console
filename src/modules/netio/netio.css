@@ -1,0 +1,11 @@
+.net-head { display: grid; grid-template-columns: 1fr 1fr; gap: .35em; }
+.net-rate { display: flex; flex-direction: column; padding: .2em .5em; background: rgba(7, 23, 34, .55); border-left: .15em solid var(--tone); }
+.net-rate span { color: var(--dim); font-size: .5em; letter-spacing: .16em; }
+.net-rate b { font-family: var(--display); font-size: 1.15em; color: var(--tone); white-space: nowrap; }
+.net-chart { position: relative; flex: 1 1 0; min-height: 2.5em; margin: .35em 0; background: rgba(7, 23, 34, .4); }
+.net-chart.is-large { height: 100%; min-height: 6em; }
+.net-window { position: absolute; right: .4em; top: .2em; color: var(--dim); font-size: .45em; letter-spacing: .14em; }
+.net-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(9em, 1fr)); gap: .25em; }
+.net-links li { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: .35em; align-items: center; padding: .2em .4em; background: rgba(7, 23, 34, .5); font-size: .55em; }
+.net-links b { letter-spacing: .1em; font-size: .9em; }
+.net-links span { color: var(--muted); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--mono); font-size: .9em; }

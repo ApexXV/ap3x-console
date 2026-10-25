@@ -19,6 +19,11 @@ export function validateLayout(raw: unknown, knownModules: (id: string) => boole
   if (layout.refreshSeconds !== undefined && !(layout.refreshSeconds >= 5 && layout.refreshSeconds <= 3600)) {
     problems.push("refreshSeconds must be between 5 and 3600");
   }
+  if (layout.navigation !== undefined && !["columns", "pages"].includes(layout.navigation)) problems.push('navigation must be "columns" or "pages"');
+  if (layout.chrome !== undefined && !["full", "compact"].includes(layout.chrome)) problems.push('chrome must be "full" or "compact"');
+  if (layout.homeAfterSeconds !== undefined && (layout.navigation !== "pages" || !(layout.homeAfterSeconds >= 15 && layout.homeAfterSeconds <= 3600))) {
+    problems.push("homeAfterSeconds needs navigation \"pages\" and must be between 15 and 3600");
+  }
   if (!Array.isArray(layout.regions) || !layout.regions.length) return [...problems, "regions must be a non-empty list"];
   const panelIds = new Set<string>();
   const regionIds = new Set<string>();
