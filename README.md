@@ -16,7 +16,7 @@ URL parameters: `layout=<id>` (a file in `layouts/`), `demo` (force demo data), 
 | `src/core/` | Module and layout types, source polling and staleness, layout validation, the console runtime (stage, panels, priority banner, Changes log, detail overlay), detail-view building blocks |
 | `src/modules/` | Built-in modules, one folder each (manifest, parsing, view, styles) |
 | `src/styles/` | Design tokens and shared styles (AP3X Operations palette; sizes in `em` of the layout's stage font size) |
-| `layouts/` | Layout files: `command-57` (7680×2160) and `ops-1080` (3200×1800 operations screen) |
-| `docs/` | [Architecture](docs/ARCHITECTURE.md), [writing a module](docs/MODULES.md), [phase 1 plan](docs/PHASE1.md) |
+| `layouts/` | Layout files: `command-57` (7680×2160), `ops-1080` (3200×1800 operations screen), and `lab-touch` (800×480 LabTouch1 touchscreen) |
+| `docs/` | [Architecture](docs/ARCHITECTURE.md), [writing a module](docs/MODULES.md), [phase 1 plan](docs/PHASE1.md), [LabTouch1 screen](docs/LAB-TOUCH.md), [releasing](docs/RELEASE.md) |
 
-A build is static files with relative paths: copy `dist/` next to the feeds it reads (on rackmain1, the wall-ui folder) and open `index.html?layout=command-57`.
+A build is static files with relative paths. On rackmain1, `console-release` builds `main` and serves it from the wall-ui folder as `/console/` (see [docs/RELEASE.md](docs/RELEASE.md)).

@@ -1,4 +1,4 @@
-import { bar, el, setTone, tag } from "../../core/dom";
+import { bar, button, el, setTone, tag } from "../../core/dom";
 import { note } from "../../core/detail";
 import { ageText, asDict, clockOf, dayLabel, durationText, etaText, num, rows, sinceMs, text } from "../../core/format";
 import type { ModuleManifest, Tone } from "../../core/types";
@@ -80,12 +80,14 @@ const chipFor = (m: LabModel): { label: string; tone: Tone } =>
       : m.errors ? { label: `${m.errors} ERROR`, tone: "bad" }
         : m.active ? { label: `${m.active} ACTIVE`, tone: "info" } : { label: "ALL IDLE", tone: "good" };
 
+export const PRINTERS_SOURCE = { id: "printers", url: "/printers-data/current.json", schema: "AP3X-PRINTERS-1", stampField: "generated_at", maxAgeMs: STALE_MS, optional: true };
+
 export const labModule: ModuleManifest<LabModel> = {
   id: "lab-printers",
   title: "LAB · PRINTERS & LASER",
   description: "3D printers and laser cutters: state, job progress, time left, layers, temperatures, and material.",
   version: "1.0.0",
-  sources: [{ id: "printers", url: "/printers-data/current.json", schema: "AP3X-PRINTERS-1", stampField: "generated_at", maxAgeMs: STALE_MS, optional: true }],
+  sources: [PRINTERS_SOURCE],
 
   model: (ctx) => parseLab(ctx.sources.printers?.data, ctx.now),
 
@@ -110,9 +112,12 @@ export const labModule: ModuleManifest<LabModel> = {
 
   chip: chipFor,
 
-  detail(m, ctx) {
-    const cards = el("div", "lab-cards");
-    cards.append(...m.devices.map((d) => {
+  detail(m, ctx, hooks) {
+    // Small screens show one device at a time with a picker; wide screens show every card.
+    const single = ctx.stageWidth < 1600 && m.devices.length > 1;
+    const selected = Math.min(Number(hooks.state.device ?? 0), Math.max(0, m.devices.length - 1));
+    const cards = el("div", single ? "lab-cards is-single" : "lab-cards");
+    cards.append(...(single ? m.devices.slice(selected, selected + 1) : m.devices).map((d) => {
       const [label, tone] = STATE_LABEL[d.state];
       const card = el("section", `lab-card is-${d.state}`);
       setTone(card, tone);
@@ -151,11 +156,20 @@ export const labModule: ModuleManifest<LabModel> = {
       card.append(grid);
       return card;
     }));
+    const picker = el("nav", "lab-picker");
+    if (single) {
+      picker.append(...m.devices.map((d, i) => {
+        const chip = button(d.name, `Show ${d.name}`, () => { hooks.state.device = i; hooks.rebuild(); }, i === selected ? "btn is-active" : "btn");
+        setTone(chip, STATE_LABEL[d.state][1]);
+        return chip;
+      }));
+    }
     return {
       title: "LAB · PRINTERS & LASER", chip: chipFor(m),
       foot: `${m.devices.length} devices · read-only status from the lab collector`,
-      columns: "minmax(0, 1fr)", rows: "minmax(0, 1fr)",
-      sections: [m.devices.length ? cards : note("No printer feed yet. Set up the lab collector (ap3x-wall-data-collectors, docs/printers-contract.md).")],
+      columns: "minmax(0, 1fr)", rows: single ? "auto minmax(0, 1fr)" : "minmax(0, 1fr)",
+      sections: m.devices.length ? (single ? [picker, cards] : [cards])
+        : [note("No printer feed yet. Set up the lab collector (ap3x-wall-data-collectors, docs/printers-contract.md).")],
     };
   },
 

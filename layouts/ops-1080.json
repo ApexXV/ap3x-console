@@ -13,29 +13,24 @@
       "id": "ops",
       "title": "OPERATIONS",
       "columns": "repeat(3, minmax(0, 1fr))",
-      "rows": "1fr 1fr .8fr",
+      "rows": "1fr 1fr .85fr",
       "panels": [
+        {
+          "id": "host",
+          "module": "host",
+          "title": "RACKMAIN1 HOST"
+        },
         {
           "id": "media",
           "module": "media"
         },
         {
           "id": "lab",
-          "module": "lab-printers",
-          "column": "span 2"
+          "module": "lab-printers"
         },
         {
-          "id": "nodes",
-          "module": "node-status",
-          "settings": {
-            "nodes": [
-              "RACKMAIN1",
-              "RACKPI1",
-              "RACKPI2",
-              "APEXTOWER",
-              "LABPI1"
-            ]
-          }
+          "id": "services",
+          "module": "services"
         },
         {
           "id": "local",
@@ -47,24 +42,21 @@
         },
         {
           "id": "camera",
-          "module": "placeholder",
-          "title": "CAMERA",
+          "module": "camera",
+          "title": "CAMERA ALPHA",
           "settings": {
-            "name": "Camera"
+            "label": "Camera Alpha"
           }
-        },
-        {
-          "id": "feeds",
-          "module": "feed-health",
-          "column": "span 2"
         },
         {
           "id": "fm",
-          "module": "placeholder",
-          "title": "FM OPERATIONS",
-          "settings": {
-            "name": "FM operations"
-          }
+          "module": "clickup",
+          "title": "FM OPERATIONS \u00b7 CLICKUP",
+          "column": "span 2"
+        },
+        {
+          "id": "feeds",
+          "module": "feed-health"
         }
       ]
     }

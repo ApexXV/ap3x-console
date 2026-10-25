@@ -4,6 +4,7 @@ import { validateLayout } from "../src/core/layout";
 import { SourceHub } from "../src/core/sources";
 import command57 from "../layouts/command-57.json";
 import ops1080 from "../layouts/ops-1080.json";
+import labTouch from "../layouts/lab-touch.json";
 import { registerBuiltins } from "../src/modules";
 import { getModule } from "../src/core/registry";
 
@@ -14,6 +15,7 @@ describe("layouts", () => {
   it("every shipped layout is valid", () => {
     expect(validateLayout(command57, known)).toEqual([]);
     expect(validateLayout(ops1080, known)).toEqual([]);
+    expect(validateLayout(labTouch, known)).toEqual([]);
   });
 
   it("reports unknown modules, duplicate ids, and bad sizes", () => {

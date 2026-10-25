@@ -1,0 +1,17 @@
+.module-host .panel-body { gap: .4em; }
+.rings { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .4em; flex: 1 1 auto; min-height: 0; }
+.ring { position: relative; margin: 0; display: grid; place-items: center; min-height: 0; }
+.ring svg { width: 100%; height: 100%; max-height: 5.2em; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 9; }
+.ring .track { stroke: rgba(56, 189, 202, .12); }
+.ring .arc { stroke: var(--tone, var(--ap3x-cyan)); stroke-dasharray: 100; stroke-dashoffset: var(--off, 100); stroke-linecap: round; transition: stroke-dashoffset 1.2s var(--ease); }
+.ring figcaption { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.ring figcaption b { font-family: var(--display); font-size: .9em; }
+.ring figcaption span { color: var(--dim); font-size: .4em; letter-spacing: .14em; }
+.rings.is-large .ring svg { max-height: 9em; }
+.rings.is-large figcaption b { font-size: 1.4em; }
+.rings.is-large figcaption span { font-size: .5em; }
+.host-facts .dstat, .host-facts div { border-top-color: var(--ap3x-teal); }
+.host-nodes { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: .33em; }
+.host-nodes div { display: flex; justify-content: space-between; gap: .4em; padding: .2em .4em; background: rgba(7, 23, 34, .5); font-size: .5em; letter-spacing: .1em; }
+.host-nodes b { color: var(--tone); }

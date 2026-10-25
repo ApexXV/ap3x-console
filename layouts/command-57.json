@@ -13,36 +13,24 @@
       "id": "ops",
       "title": "OPERATIONS",
       "columns": "repeat(2, minmax(0, 1fr))",
-      "rows": "1.1fr 1fr 1fr .9fr",
+      "rows": "1.1fr 1fr .95fr .75fr .75fr",
       "panels": [
         {
           "id": "host",
-          "module": "placeholder",
-          "title": "RACKMAIN1 HOST",
-          "settings": {
-            "name": "Rackmain1 host"
-          }
+          "module": "host",
+          "title": "RACKMAIN1 HOST"
         },
         {
           "id": "camera",
-          "module": "placeholder",
-          "title": "CAMERA",
+          "module": "camera",
+          "title": "CAMERA ALPHA",
           "settings": {
-            "name": "Camera"
+            "label": "Camera Alpha"
           }
         },
         {
-          "id": "nodes",
-          "module": "node-status",
-          "settings": {
-            "nodes": [
-              "RACKMAIN1",
-              "RACKPI1",
-              "RACKPI2",
-              "APEXTOWER",
-              "LABPI1"
-            ]
-          }
+          "id": "services",
+          "module": "services"
         },
         {
           "id": "local",
@@ -61,16 +49,18 @@
           "module": "lab-printers"
         },
         {
-          "id": "fm",
-          "module": "placeholder",
-          "title": "FM OPERATIONS",
-          "settings": {
-            "name": "FM operations"
-          }
+          "id": "threat",
+          "module": "threat"
         },
         {
           "id": "feeds",
           "module": "feed-health"
+        },
+        {
+          "id": "fm",
+          "module": "clickup",
+          "title": "FM OPERATIONS \u00b7 CLICKUP",
+          "column": "1 / -1"
         }
       ]
     },

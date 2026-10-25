@@ -51,6 +51,8 @@ export class Console {
   private timer: ReturnType<typeof setInterval> | undefined;
   private changeDay: string | null;
   private changesSeen = 0;
+  private page = 0;
+  private idleTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(private options: ConsoleOptions) {
     this.layout = options.layout;
@@ -69,10 +71,24 @@ export class Console {
     root.replaceChildren();
     root.classList.add("console");
     root.dataset.layout = layout.id;
+    root.dataset.navigation = this.paged ? "pages" : "columns";
+    root.dataset.chrome = layout.chrome ?? "full";
     this.stage = el("div", "stage");
     Object.assign(this.stage.style, { width: `${layout.stage.width}px`, height: `${layout.stage.height}px`, fontSize: `${layout.stage.fontSize}px` });
-    this.stage.append(this.buildTopbar(), this.buildRegions(), this.buildOverlay());
+    this.stage.append(this.buildTopbar(), this.buildRegions());
+    if (this.paged) this.stage.append(this.buildPageNav());
+    this.stage.append(this.buildOverlay());
     root.append(this.stage);
+    if (this.paged) {
+      this.showPage(0);
+      // Any touch restarts the idle countdown back to the first page.
+      root.addEventListener("pointerdown", () => this.armIdle(), { capture: true });
+      // Modules can ask for a page by region id (e.g. a home tile that opens the printers page).
+      root.addEventListener("console-page", (event) => {
+        const index = this.layout.regions.findIndex((r) => r.id === (event as CustomEvent<string>).detail);
+        if (index >= 0) { this.closeDetail(); this.showPage(index); }
+      });
+    }
     this.fit();
     window.addEventListener("resize", () => this.fit());
     document.addEventListener("keydown", (event) => { if (event.key === "Escape") this.closeDetail(); });
@@ -87,6 +103,7 @@ export class Console {
 
   stop(): void {
     clearInterval(this.timer);
+    clearTimeout(this.idleTimer);
   }
 
   /** One refresh: fetch (or load demo payloads), rebuild every module model, render, rank, log. */
@@ -135,6 +152,27 @@ export class Console {
     this.overlay.hidden = true;
   }
 
+  /** Pages layouts: show one region and mark its tab. Out-of-range indexes wrap. */
+  showPage(index: number): void {
+    if (!this.paged) return;
+    const count = this.layout.regions.length;
+    this.page = ((index % count) + count) % count;
+    this.stage.querySelectorAll<HTMLElement>(".region").forEach((node, i) => { node.hidden = i !== this.page; });
+    this.stage.querySelectorAll<HTMLElement>(".page-tab").forEach((node, i) => {
+      node.classList.toggle("is-active", i === this.page);
+      node.setAttribute("aria-selected", String(i === this.page));
+    });
+    this.armIdle();
+  }
+
+  get currentPage(): number {
+    return this.page;
+  }
+
+  private get paged(): boolean {
+    return this.layout.navigation === "pages";
+  }
+
   // ---------------------------------------------------------------- building
 
   private buildTopbar(): HTMLElement {
@@ -155,7 +193,7 @@ export class Console {
 
   private buildRegions(): HTMLElement {
     const regions = el("main", "regions");
-    regions.style.gridTemplateColumns = this.layout.regionColumns;
+    regions.style.gridTemplateColumns = this.paged ? "minmax(0, 1fr)" : this.layout.regionColumns;
     this.layout.regions.forEach((region, index) => {
       const column = el("section", "region");
       column.dataset.region = region.id;
@@ -189,6 +227,29 @@ export class Console {
       regions.append(column);
     });
     return regions;
+  }
+
+  private buildPageNav(): HTMLElement {
+    const nav = el("nav", "page-nav");
+    nav.setAttribute("role", "tablist");
+    this.layout.regions.forEach((region, index) => {
+      const tab = el("button", "page-tab", region.title);
+      tab.type = "button";
+      tab.setAttribute("role", "tab");
+      tab.dataset.page = region.id;
+      tab.addEventListener("click", () => { this.closeDetail(); this.showPage(index); });
+      nav.append(tab);
+    });
+    return nav;
+  }
+
+  private armIdle(): void {
+    clearTimeout(this.idleTimer);
+    const seconds = this.layout.homeAfterSeconds;
+    if (!this.paged || !seconds) return;
+    this.idleTimer = setTimeout(() => {
+      if (this.page !== 0 || this.detailId) { this.closeDetail(); this.showPage(0); }
+    }, seconds * 1000);
   }
 
   private buildOverlay(): HTMLElement {
@@ -252,11 +313,17 @@ export class Console {
 
   private demoPayloads(now: number): Record<string, unknown> {
     const payloads: Record<string, unknown> = {};
-    // Modules sharing a feed may both offer demo data; a full contract payload wins over a bare timestamp stub.
+    // Modules sharing a feed may each describe part of it (host: system figures, services: the
+    // service list). Objects merge key by key; a full contract (schema_version / contract) takes
+    // precedence over a partial stub, and the first module's value wins on a conflicting key.
     const full = (value: unknown) => Boolean(value) && typeof value === "object" && ("schema_version" in (value as object) || "contract" in (value as object));
+    const plain = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && !Array.isArray(value);
     for (const panel of this.panels) {
       for (const [id, value] of Object.entries(panel.module.demo?.(now) ?? {})) {
-        if (!(id in payloads) || (!full(payloads[id]) && full(value))) payloads[id] = value;
+        const current = payloads[id];
+        if (!(id in payloads)) payloads[id] = value;
+        else if (full(value) && !full(current)) payloads[id] = plain(current) && plain(value) ? { ...current, ...value } : value;
+        else if (plain(current) && plain(value)) payloads[id] = { ...value, ...current };
       }
     }
     return payloads;
