@@ -1,0 +1,20 @@
+{
+  "name": "ap3x-console",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Modular personal display console: data-contract modules arranged by layout files, from 1080p screens to dual-4K ultrawides.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.7",
+    "vitest": "^3.2.7"
+  }
+}

@@ -1,0 +1,26 @@
+/* AP3X design tokens (AP3X Operations artwork package, 2026-10-19). Sizes in modules use em,
+ * relative to the layout's stage.fontSize, so one module renders on a 1080p screen and a 7680 px ultrawide. */
+:root {
+  --ap3x-midnight: #102936;
+  --ap3x-teal: #087e91;
+  --ap3x-cyan: #38bdca;
+  --ap3x-white: #f5f7f6;
+
+  --canvas: #071722;
+  --surface: rgba(12, 34, 48, .84);
+  --surface-raised: rgba(16, 41, 54, .9);
+  --line: rgba(56, 189, 202, .18);
+  --line-strong: rgba(56, 189, 202, .42);
+  --text: var(--ap3x-white);
+  --muted: #93acb9;
+  --dim: #5f7c8a;
+  --good: #5fe0a6;
+  --warn: #f2b54f;
+  --bad: #ff6b72;
+  --cut: 1.13em;
+  --gap: .93em;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --display: "Space Grotesk", "Segoe UI Variable Display", "Segoe UI", Inter, system-ui, sans-serif;
+  --body: Inter, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --mono: "Cascadia Mono", "JetBrains Mono", ui-monospace, Consolas, monospace;
+}

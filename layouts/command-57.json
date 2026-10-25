@@ -1,0 +1,189 @@
+{
+  "id": "command-57",
+  "title": "COMMAND 57",
+  "stage": {
+    "width": 7680,
+    "height": 2160,
+    "fontSize": 30
+  },
+  "refreshSeconds": 30,
+  "regionColumns": "5fr 8fr 5fr",
+  "regions": [
+    {
+      "id": "ops",
+      "title": "OPERATIONS",
+      "columns": "repeat(2, minmax(0, 1fr))",
+      "rows": "1.1fr 1fr 1fr .9fr",
+      "panels": [
+        {
+          "id": "host",
+          "module": "placeholder",
+          "title": "RACKMAIN1 HOST",
+          "settings": {
+            "name": "Rackmain1 host"
+          }
+        },
+        {
+          "id": "camera",
+          "module": "placeholder",
+          "title": "CAMERA",
+          "settings": {
+            "name": "Camera"
+          }
+        },
+        {
+          "id": "nodes",
+          "module": "node-status",
+          "settings": {
+            "nodes": [
+              "RACKMAIN1",
+              "RACKPI1",
+              "RACKPI2",
+              "APEXTOWER",
+              "LABPI1"
+            ]
+          }
+        },
+        {
+          "id": "local",
+          "module": "placeholder",
+          "title": "LOCAL WEATHER & RADAR",
+          "settings": {
+            "name": "Local weather & radar"
+          }
+        },
+        {
+          "id": "media",
+          "module": "media"
+        },
+        {
+          "id": "lab",
+          "module": "lab-printers"
+        },
+        {
+          "id": "fm",
+          "module": "placeholder",
+          "title": "FM OPERATIONS",
+          "settings": {
+            "name": "FM operations"
+          }
+        },
+        {
+          "id": "feeds",
+          "module": "feed-health"
+        }
+      ]
+    },
+    {
+      "id": "business",
+      "title": "BUSINESS",
+      "columns": "repeat(6, minmax(0, 1fr))",
+      "rows": ".95fr 1.05fr 1.2fr",
+      "panels": [
+        {
+          "id": "bank",
+          "module": "placeholder",
+          "title": "BANK",
+          "settings": {
+            "name": "Bank"
+          },
+          "column": "span 2"
+        },
+        {
+          "id": "receipts",
+          "module": "placeholder",
+          "title": "RECEIPTS",
+          "settings": {
+            "name": "Receipts"
+          },
+          "column": "span 2"
+        },
+        {
+          "id": "review",
+          "module": "placeholder",
+          "title": "REVIEW QUEUE",
+          "settings": {
+            "name": "Review queue"
+          },
+          "column": "span 2"
+        },
+        {
+          "id": "cashflow",
+          "module": "placeholder",
+          "title": "CASH FLOW",
+          "settings": {
+            "name": "Cash flow"
+          },
+          "column": "span 4"
+        },
+        {
+          "id": "health",
+          "module": "placeholder",
+          "title": "BOOKS HEALTH",
+          "settings": {
+            "name": "Books health"
+          },
+          "column": "span 2"
+        },
+        {
+          "id": "obligations",
+          "module": "placeholder",
+          "title": "OBLIGATIONS",
+          "settings": {
+            "name": "Obligations"
+          },
+          "column": "span 4"
+        },
+        {
+          "id": "allocation",
+          "module": "placeholder",
+          "title": "LATEST RECEIPT",
+          "settings": {
+            "name": "Latest receipt"
+          },
+          "column": "span 2"
+        }
+      ]
+    },
+    {
+      "id": "markets",
+      "title": "FINANCE & MARKETS",
+      "columns": "minmax(0, 1fr)",
+      "rows": "1.32fr 1.18fr .72fr .78fr",
+      "panels": [
+        {
+          "id": "portfolio",
+          "module": "placeholder",
+          "title": "PORTFOLIO",
+          "settings": {
+            "name": "Portfolio"
+          }
+        },
+        {
+          "id": "quotes",
+          "module": "placeholder",
+          "title": "WATCHLIST",
+          "settings": {
+            "name": "Watchlist"
+          }
+        },
+        {
+          "id": "sentinel",
+          "module": "placeholder",
+          "title": "MARKET SENTINEL",
+          "settings": {
+            "name": "Market sentinel"
+          }
+        },
+        {
+          "id": "control",
+          "module": "placeholder",
+          "title": "CONTROL & EXTERNAL",
+          "settings": {
+            "name": "Control & external"
+          }
+        }
+      ]
+    }
+  ]
+}

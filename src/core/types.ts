@@ -1,0 +1,141 @@
+/* AP3X Console core types: modules, data sources, layouts.
+ *
+ * A module turns one or more JSON data contracts into a compact panel and an
+ * optional detail view. Layouts place module instances on a fixed-size stage.
+ * Nothing here knows about a specific feed; modules own their contracts. */
+
+export type Tone = "good" | "warn" | "bad" | "info" | "muted";
+
+/** A JSON feed a module reads. Modules that share a feed declare the same id and url. */
+export interface SourceSpec {
+  id: string;
+  url: string;
+  /** `schema_version` the payload must carry; anything else is reported as invalid by the module. */
+  schema?: string;
+  /** Timestamp field checked against `maxAgeMs` (usually `generated_at`). */
+  stampField?: string;
+  maxAgeMs?: number;
+  /** An optional feed is not reported as down until it has answered at least once. */
+  optional?: boolean;
+}
+
+export type SourceStatus = "ok" | "retained" | "stale" | "down" | "unknown";
+
+export interface SourceState {
+  id: string;
+  status: SourceStatus;
+  data: unknown;
+  /** Age of the payload's own timestamp (stampField), when it has one. */
+  ageMs: number | null;
+  /** When the last successful fetch happened (epoch ms). */
+  fetchedAt: number | null;
+  /** True once this source has answered at least once since the page loaded. */
+  seen: boolean;
+}
+
+export interface Chip {
+  label: string;
+  tone: Tone;
+}
+
+/** One line for the Changes timeline. Repeats merge by kicker + text. */
+export interface ChangeEvent {
+  tone: Tone;
+  kicker: string;
+  text: string;
+}
+
+/** A candidate for the top banner. The highest `rank` across all modules wins. */
+export interface Priority {
+  rank: number;
+  kicker: string;
+  title: string;
+  summary: string;
+  posture: string;
+  tone: Tone;
+}
+
+export type RunMode = "live" | "demo";
+
+export interface ModuleContext<S = Record<string, unknown>> {
+  now: number;
+  mode: RunMode;
+  /** Layout-level settings merged over the module's defaults. */
+  settings: S;
+  /** Only the sources this module declared, by id. */
+  sources: Record<string, SourceState>;
+  /** Stage width in px, so a module can choose denser rendering on small stages. */
+  stageWidth: number;
+}
+
+export interface DetailView {
+  title: string;
+  chip?: Chip;
+  foot?: string;
+  /** CSS grid templates for the detail body. */
+  columns: string;
+  rows: string;
+  sections: HTMLElement[];
+}
+
+/** Hooks a detail builder can use for interactive views (paging, expanding a row). */
+export interface DetailHooks {
+  rebuild(): void;
+  /** Per-module scratch state that survives rebuilds and refreshes while the detail view is open. */
+  state: Record<string, unknown>;
+}
+
+export interface ModuleManifest<M = unknown, S extends Record<string, unknown> = Record<string, unknown>> {
+  id: string;
+  title: string;
+  description: string;
+  version: string;
+  sources: SourceSpec[];
+  defaults?: S;
+  /** Pure: source payloads → view model. Must tolerate missing, stale, or malformed payloads. */
+  model(ctx: ModuleContext<S>): M;
+  /** Fills the panel body. Called on every refresh with a fresh model. */
+  render(body: HTMLElement, model: M, ctx: ModuleContext<S>): void;
+  chip?(model: M): Chip;
+  detail?(model: M, ctx: ModuleContext<S>, hooks: DetailHooks): DetailView;
+  /** Demo payloads by source id, for previews and screenshots. */
+  demo?(now: number): Record<string, unknown>;
+  changes?(previous: M, next: M): ChangeEvent[];
+  priority?(model: M): Priority | null;
+}
+
+/** Erased manifest type used by the registry and console. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyModule = ModuleManifest<any, any>;
+
+export interface LayoutPanel {
+  /** Unique within the layout; used for DOM ids and saved state. */
+  id: string;
+  module: string;
+  /** CSS grid placement inside the region, e.g. { column: "1 / -1", row: "4" }. */
+  column?: string;
+  row?: string;
+  /** Overrides the module title in the panel header. */
+  title?: string;
+  settings?: Record<string, unknown>;
+}
+
+export interface LayoutRegion {
+  id: string;
+  title: string;
+  /** CSS grid templates for the region's panel grid. */
+  columns: string;
+  rows: string;
+  panels: LayoutPanel[];
+}
+
+export interface Layout {
+  id: string;
+  title: string;
+  /** Fixed stage the layout is designed for; it is scaled to fit any screen. */
+  stage: { width: number; height: number; fontSize: number };
+  /** CSS grid template for the regions, left to right. */
+  regionColumns: string;
+  regions: LayoutRegion[];
+  refreshSeconds?: number;
+}
