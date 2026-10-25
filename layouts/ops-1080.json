@@ -1,0 +1,72 @@
+{
+  "id": "ops-1080",
+  "title": "OPERATIONS",
+  "stage": {
+    "width": 3200,
+    "height": 1800,
+    "fontSize": 30
+  },
+  "refreshSeconds": 30,
+  "regionColumns": "minmax(0, 1fr)",
+  "regions": [
+    {
+      "id": "ops",
+      "title": "OPERATIONS",
+      "columns": "repeat(3, minmax(0, 1fr))",
+      "rows": "1fr 1fr .8fr",
+      "panels": [
+        {
+          "id": "media",
+          "module": "media"
+        },
+        {
+          "id": "lab",
+          "module": "lab-printers",
+          "column": "span 2"
+        },
+        {
+          "id": "nodes",
+          "module": "node-status",
+          "settings": {
+            "nodes": [
+              "RACKMAIN1",
+              "RACKPI1",
+              "RACKPI2",
+              "APEXTOWER",
+              "LABPI1"
+            ]
+          }
+        },
+        {
+          "id": "local",
+          "module": "placeholder",
+          "title": "LOCAL WEATHER & RADAR",
+          "settings": {
+            "name": "Local weather & radar"
+          }
+        },
+        {
+          "id": "camera",
+          "module": "placeholder",
+          "title": "CAMERA",
+          "settings": {
+            "name": "Camera"
+          }
+        },
+        {
+          "id": "feeds",
+          "module": "feed-health",
+          "column": "span 2"
+        },
+        {
+          "id": "fm",
+          "module": "placeholder",
+          "title": "FM OPERATIONS",
+          "settings": {
+            "name": "FM operations"
+          }
+        }
+      ]
+    }
+  ]
+}
