@@ -75,11 +75,13 @@ export class SourceHub {
 
   private async fetchOne(spec: SourceSpec): Promise<SourceState> {
     const now = this.clock();
+    const started = typeof performance !== "undefined" ? performance.now() : 0;
     try {
       const data = await this.fetcher(spec.url);
+      const latencyMs = typeof performance !== "undefined" ? Math.round(performance.now() - started) : null;
       this.cache.set(spec.id, { data, at: now });
       this.seen.add(spec.id);
-      return this.classify(spec, data, now, now, false);
+      return { ...this.classify(spec, data, now, now, false), latencyMs };
     } catch {
       const cached = this.cache.get(spec.id);
       if (cached && now - cached.at <= this.retainMs) return this.classify(spec, cached.data, cached.at, now, true);

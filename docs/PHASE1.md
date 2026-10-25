@@ -14,12 +14,12 @@ Goal: the AP3X Console runs Command 57 from layout files and modules, matching t
 
 Each becomes a module with its existing contract, demo data, detail view, changes, and priority:
 
-- [ ] Host (rackmain1 CPU, memory, disks, uptime, containers) from `/api/status`
-- [ ] Services from `/api/status` and the ops brief
-- [ ] Camera (go2rtc frame refresh) — and later per-printer cameras through LabPi1
+- [x] Host (CPU, memory, disks, load, uptime, API latency, containers, nodes) from `/api/status`
+- [x] Services from `/api/status` and the ops brief (the service list and aliases are a setting)
+- [x] Camera (go2rtc frame refresh on its own 5 s cycle) — later per-printer cameras through LabPi1
 - [ ] Local weather, radar map, aircraft, and forecast (Leaflet)
-- [ ] Threat and ops feed
-- [ ] FM operations (ClickUp)
+- [x] Threat and ops feed
+- [x] FM operations (ClickUp): counts, deadlines, Lists with drill-in, mentions and comms
 - [ ] Business: bank, receipts, review queue, cash flow, books health, obligations, latest receipt (summaries from `ucs-layout-v2-data.js`)
 - [ ] Finance and markets: portfolio, watchlist, market sentinel, control and external
 - [ ] Console chrome: ticker (today/tonight strip), night mode, privacy toggle button, motion setting, music tile

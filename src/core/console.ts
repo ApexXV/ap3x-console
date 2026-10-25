@@ -252,11 +252,17 @@ export class Console {
 
   private demoPayloads(now: number): Record<string, unknown> {
     const payloads: Record<string, unknown> = {};
-    // Modules sharing a feed may both offer demo data; a full contract payload wins over a bare timestamp stub.
+    // Modules sharing a feed may each describe part of it (host: system figures, services: the
+    // service list). Objects merge key by key; a full contract (schema_version / contract) takes
+    // precedence over a partial stub, and the first module's value wins on a conflicting key.
     const full = (value: unknown) => Boolean(value) && typeof value === "object" && ("schema_version" in (value as object) || "contract" in (value as object));
+    const plain = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && !Array.isArray(value);
     for (const panel of this.panels) {
       for (const [id, value] of Object.entries(panel.module.demo?.(now) ?? {})) {
-        if (!(id in payloads) || (!full(payloads[id]) && full(value))) payloads[id] = value;
+        const current = payloads[id];
+        if (!(id in payloads)) payloads[id] = value;
+        else if (full(value) && !full(current)) payloads[id] = plain(current) && plain(value) ? { ...current, ...value } : value;
+        else if (plain(current) && plain(value)) payloads[id] = { ...value, ...current };
       }
     }
     return payloads;

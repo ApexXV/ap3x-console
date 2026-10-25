@@ -5,6 +5,10 @@ import { registerBuiltins } from "../src/modules";
 import type { AnyModule, ModuleContext } from "../src/core/types";
 import { parseLab } from "../src/modules/lab";
 import { parseSessions, parseYoutube, diskStatus } from "../src/modules/media/parse";
+import { parseServices, DEFAULT_SERVICES } from "../src/modules/services";
+import { dueText, parseFm } from "../src/modules/fm";
+import { parseHost } from "../src/modules/host";
+import { parseThreat } from "../src/modules/threat";
 
 registerBuiltins();
 const NOW = Date.parse("2026-10-25T18:00:00Z");
@@ -70,5 +74,30 @@ describe("contracts", () => {
     expect(model.feeds.some((f) => f.id === "printers")).toBe(false);
     ctx.sources.bank = { id: "bank", status: "down", data: null, ageMs: null, fetchedAt: null, seen: true };
     expect((feeds.model(ctx) as { problems: { id: string }[] }).problems.some((p) => p.id === "bank")).toBe(false);
+  });
+
+  it("services: aliases match service or container lists, unknowns stay unknown", () => {
+    const m = parseServices([{ containers: [{ container: "linuxserver-sonarr", status: "running" }, { name: "plex", state: "DOWN" }] }, null], DEFAULT_SERVICES);
+    expect(m.services.find((s) => s.name === "Sonarr")).toMatchObject({ online: true });
+    expect(m.services.find((s) => s.name === "Plex")).toMatchObject({ online: false, state: "DOWN" });
+    expect(m.services.find((s) => s.name === "Readarr")).toMatchObject({ online: null, state: "UNKNOWN" });
+    expect([m.known, m.online]).toEqual([2, 1]);
+  });
+
+  it("host: reads nested or flat status fields", () => {
+    expect(parseHost({ cpu_percent: 12, system: { memory_percent: 40 } }, { posture: "watch" }, 18)).toMatchObject({ cpu: 12, mem: 40, posture: "WATCH", latency: 18 });
+    expect(parseHost(null, null, null)).toMatchObject({ available: false, cpu: null, posture: "UNKNOWN" });
+  });
+
+  it("threat: drivers as list or text; feed as list or items", () => {
+    expect(parseThreat({ level: "high", drivers: "Port scan" }, [{ summary: "x", state: "warn" }])).toMatchObject({ level: "HIGH", drivers: ["Port scan"], feed: [{ text: "x", state: "WARN" }] });
+  });
+
+  it("fm: due labels and states", () => {
+    const fm = parseFm(getModule("clickup")!.demo!(NOW).clickup, NOW);
+    expect(fm.state).toBe("LIVE");
+    expect(fm.upcoming.map(dueText)).toEqual(["10D OVERDUE", "OVERDUE 09:00", "TOMORROW"]);
+    expect(parseFm(null, NOW).state).toBe("NO FEED");
+    expect(parseFm({ schema_version: "x" }, NOW).state).toBe("INVALID");
   });
 });

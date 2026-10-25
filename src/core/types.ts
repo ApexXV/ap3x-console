@@ -31,6 +31,8 @@ export interface SourceState {
   fetchedAt: number | null;
   /** True once this source has answered at least once since the page loaded. */
   seen: boolean;
+  /** Round-trip time of this refresh's fetch, when it was fresh (not retained or demo). */
+  latencyMs?: number | null;
 }
 
 export interface Chip {

@@ -87,3 +87,66 @@ export function ageText(ms: number | null): string | null {
   if (ms >= 3_600_000) return `${Math.floor(ms / 3_600_000)}H`;
   return `${Math.max(1, Math.round(ms / 60_000))}M`;
 }
+
+/** First non-empty value at any of the dotted paths, e.g. pick(status, ["system.cpu_percent", "cpu_percent"]). */
+export function pick(root: unknown, paths: string[]): unknown {
+  for (const path of paths) {
+    let current: unknown = root;
+    let found = true;
+    for (const part of path.split(".")) {
+      if (!record(current) || !(part in current)) { found = false; break; }
+      current = current[part];
+    }
+    if (found && current !== undefined && current !== null && current !== "") return current;
+  }
+  return null;
+}
+
+export function bool(...values: unknown[]): boolean | null {
+  for (const value of values) {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "string") {
+      const v = value.trim().toLowerCase();
+      if (["true", "online", "active", "healthy", "up", "running", "ready", "live"].includes(v)) return true;
+      if (["false", "offline", "inactive", "down", "failed", "stopped", "dead"].includes(v)) return false;
+    }
+  }
+  return null;
+}
+
+/** A tone for a free-form state word reported by a service ("DEGRADED" → warn, "HEALTHY" → good). */
+export function toneFor(value: unknown): "good" | "warn" | "bad" | "info" | "muted" {
+  const state = String(value ?? "UNKNOWN").toUpperCase();
+  if (/FAILED|FAIL|OFFLINE|DOWN|ERROR|CRITICAL|SEVERE|EMERGENCY|OVERDUE/.test(state)) return "bad";
+  if (/WARN|WATCH|REVIEW|STALE|PARTIAL|DEGRADED|PENDING|ATTENTION|RETAINED|UPDATE/.test(state)) return "warn";
+  if (/INFO|LOCAL|CONNECTED|LINKED|DEMO/.test(state)) return "info";
+  if (/LIVE|ONLINE|UP|ACTIVE|HEALTHY|GOOD|READY|CURRENT|NOMINAL|CLEAR|PASS|IDLE|GREEN|RUNNING|CALM/.test(state)) return "good";
+  return "muted";
+}
+
+/** "JUST NOW", "12M AGO", "3H AGO", "2D AGO". */
+export function ageLabel(ms: number | null): string {
+  if (ms === null || !Number.isFinite(ms)) return "UNKNOWN";
+  if (ms < 60_000) return "JUST NOW";
+  if (ms < 3_600_000) return `${Math.floor(ms / 60_000)}M AGO`;
+  if (ms < 86_400_000) return `${Math.floor(ms / 3_600_000)}H AGO`;
+  return `${Math.floor(ms / 86_400_000)}D AGO`;
+}
+
+/** Whole days from today (in the console's time zone) to a YYYY-MM-DD date. */
+export function daysUntil(due: string | null, now = Date.now(), tz = TZ): number | null {
+  if (!due || !/^\d{4}-\d{2}-\d{2}$/.test(due)) return null;
+  const today = dayOf(new Date(now).toISOString(), tz);
+  const days = Math.round((Date.parse(`${due}T12:00:00Z`) - Date.parse(`${today}T12:00:00Z`)) / 86_400_000);
+  return Number.isFinite(days) ? days : null;
+}
+
+export function dueLabel(days: number | null): string {
+  if (days === null) return "NO DATE";
+  if (days < 0) return `${Math.abs(days)}D OVERDUE`;
+  if (days === 0) return "DUE TODAY";
+  if (days === 1) return "TOMORROW";
+  return `IN ${days}D`;
+}
+
+export const dueTone = (days: number | null): "bad" | "warn" | "info" | "muted" => (days === null ? "muted" : days < 0 ? "bad" : days <= 7 ? "warn" : "info");

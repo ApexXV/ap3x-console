@@ -85,3 +85,17 @@ h2, h3, h4 { margin: 0; }
 [data-private] { transition: filter .3s ease; }
 .console[data-privacy="on"] [data-private] { filter: blur(.5em); }
 .console[data-privacy="on"] [data-private]:hover { filter: none; }
+
+/* ---------- services and ops feed ---------- */
+.service-grid { flex: 1 1 0; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: .27em; }
+.service { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .33em; align-items: center; padding: 0 .4em; background: rgba(7, 23, 34, .5); min-height: 0; }
+.service i { width: .45em; height: .45em; border-radius: 50%; background: var(--tone); box-shadow: 0 0 .35em var(--tone); }
+.service b { font-size: .6em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.service span { color: var(--tone); font-size: .42em; font-weight: 700; letter-spacing: .1em; }
+.threat-line { display: flex; gap: .5em; align-items: baseline; font-size: .6em; }
+.threat-line .kicker { color: var(--dim); font-size: .8em; letter-spacing: .2em; }
+.ops-feed { display: grid; gap: .2em; margin-top: .3em; min-height: 0; overflow: hidden; }
+.ops-feed li { display: grid; grid-template-columns: 2.6em minmax(0, 1fr) auto; gap: .4em; align-items: center; font-size: .55em; padding: .15em .3em; background: rgba(7, 23, 34, .45); }
+.ops-feed time { color: var(--ap3x-cyan); font-family: var(--mono); }
+.ops-feed span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ops-feed em { font-style: normal; font-weight: 700; color: var(--tone); font-size: .85em; letter-spacing: .1em; }
