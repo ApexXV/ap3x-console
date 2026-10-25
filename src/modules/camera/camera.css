@@ -8,7 +8,7 @@
 .cam-scan.run { animation: camscan 1.15s cubic-bezier(.3, .6, .3, 1) both; }
 @keyframes camscan { 0% { top: -18%; opacity: 1; } 100% { top: 100%; opacity: 0; } }
 .cam-stamp { position: absolute; right: .4em; bottom: .3em; font-family: var(--mono); font-size: .5em; color: var(--ap3x-cyan); text-shadow: 0 0 .3em #000; }
-.cam-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--dim); font-size: .55em; letter-spacing: .2em; }
+.cam-empty { position: absolute; inset: 0; display: grid; place-items: center; padding: 0 1em; text-align: center; color: var(--dim); font-size: .55em; letter-spacing: .2em; }
 .cam-empty[hidden] { display: none; }
 .cam-watch { justify-self: center; min-height: 2.6em; padding: 0 1.6em; font-size: .8em; letter-spacing: .16em; }
 .cam-live { position: fixed; inset: 0; z-index: 1000; display: grid; grid-template-rows: auto minmax(0, 1fr); background: #000; }

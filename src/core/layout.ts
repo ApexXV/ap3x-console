@@ -21,6 +21,7 @@ export function validateLayout(raw: unknown, knownModules: (id: string) => boole
   }
   if (layout.navigation !== undefined && !["columns", "pages"].includes(layout.navigation)) problems.push('navigation must be "columns" or "pages"');
   if (layout.chrome !== undefined && !["full", "compact"].includes(layout.chrome)) problems.push('chrome must be "full" or "compact"');
+  if (layout.clock !== undefined && !["12h", "24h"].includes(layout.clock)) problems.push('clock must be "12h" or "24h"');
   if (layout.homeAfterSeconds !== undefined && (layout.navigation !== "pages" || !(layout.homeAfterSeconds >= 15 && layout.homeAfterSeconds <= 3600))) {
     problems.push("homeAfterSeconds needs navigation \"pages\" and must be between 15 and 3600");
   }

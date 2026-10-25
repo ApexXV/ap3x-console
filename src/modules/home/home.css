@@ -16,3 +16,4 @@
 .home-card span { color: var(--dim); font-size: .55em; letter-spacing: .2em; }
 .home-card b { font-family: var(--display); font-size: 1.5em; color: var(--tone); white-space: nowrap; }
 .home-card small { color: var(--muted); font-size: .6em; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.home-meridiem { color: var(--muted); font-family: var(--display); font-size: 1.4em; letter-spacing: .08em; }

@@ -74,3 +74,19 @@ describe("pages navigation", () => {
     expect([...root.querySelectorAll<HTMLElement>(".region")].every((r) => !r.hidden)).toBe(true);
   });
 });
+
+describe("clock format", () => {
+  it("a layout can switch every time to 12-hour; 24-hour stays the default", async () => {
+    const { clockOf, clockWithSeconds, setClockFormat } = await import("../src/core/format");
+    const stamp = "2026-10-25T22:07:33Z"; // 6:07 PM in New York
+    document.body.innerHTML = '<div id="app"></div>';
+    new Console({ layout: { ...pagesLayout(), clock: "12h" }, root: document.getElementById("app")!, mode: "demo", storage: null }).mount();
+    expect(clockOf(stamp)).toBe("6:07 PM");
+    expect(clockWithSeconds(stamp)).toBe("6:07:33 PM");
+    new Console({ layout: pagesLayout(), root: document.getElementById("app")!, mode: "demo", storage: null }).mount();
+    expect(clockOf(stamp)).toBe("18:07");
+    expect(clockWithSeconds(stamp)).toBe("18:07:33");
+    expect(validateLayout({ ...pagesLayout(), clock: "13h" }, known)).toContain('clock must be "12h" or "24h"');
+    setClockFormat("24h");
+  });
+});
