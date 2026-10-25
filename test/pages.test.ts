@@ -43,6 +43,7 @@ describe("pages navigation", () => {
     const tabs = [...root.querySelectorAll<HTMLButtonElement>(".page-tab")];
     expect(root.dataset.navigation).toBe("pages");
     expect(root.dataset.chrome).toBe("compact");
+    expect(document.documentElement.classList.contains("touch-ui")).toBe(true);
     expect(tabs.map((t) => t.textContent)).toEqual(["HOME", "PRINTERS", "NETWORK"]);
     expect(regions.map((r) => r.hidden)).toEqual([false, true, true]);
     tabs[2]!.click();
