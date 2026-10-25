@@ -1,7 +1,7 @@
 import { ChangeLog, type LoggedChange } from "./changes";
 import { el, chipNode, setTone } from "./dom";
 import { dlist, note, sec } from "./detail";
-import { clockOf, dayOf, TZ } from "./format";
+import { clockOf, dayOf, setClockFormat, TZ } from "./format";
 import { getModule } from "./registry";
 import { SourceHub } from "./sources";
 import type { AnyModule, ChangeEvent, DetailView, Layout, LayoutPanel, ModuleContext, Priority, RunMode, SourceState } from "./types";
@@ -73,6 +73,7 @@ export class Console {
     root.dataset.layout = layout.id;
     root.dataset.navigation = this.paged ? "pages" : "columns";
     root.dataset.chrome = layout.chrome ?? "full";
+    setClockFormat(layout.clock ?? "24h");
     this.stage = el("div", "stage");
     Object.assign(this.stage.style, { width: `${layout.stage.width}px`, height: `${layout.stage.height}px`, fontSize: `${layout.stage.fontSize}px` });
     this.stage.append(this.buildTopbar(), this.buildRegions());

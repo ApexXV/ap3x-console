@@ -147,4 +147,6 @@ export interface Layout {
   chrome?: "full" | "compact";
   /** Pages only: return to the first page after this many seconds without a touch. */
   homeAfterSeconds?: number;
+  /** "24h" (default) or "12h" for every time shown, e.g. "6:07 PM" on a shared lab screen. */
+  clock?: "12h" | "24h";
 }

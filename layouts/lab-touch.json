@@ -11,6 +11,7 @@
   "navigation": "pages",
   "chrome": "compact",
   "homeAfterSeconds": 120,
+  "clock": "12h",
   "regions": [
     {
       "id": "home",

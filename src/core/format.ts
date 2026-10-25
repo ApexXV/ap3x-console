@@ -33,10 +33,27 @@ export function sinceMs(stamp: unknown, now = Date.now()): number | null {
   return Number.isFinite(parsed) ? Math.max(0, now - parsed) : null;
 }
 
+/* Clock style for every time the console shows: "18:07" (24h, the default) or "6:07 PM" (12h).
+ * A layout picks it with `clock`; the console sets it once at mount. */
+let hours: "12h" | "24h" = "24h";
+export function setClockFormat(format: "12h" | "24h"): void { hours = format; }
+export const clockFormat = (): "12h" | "24h" => hours;
+
+const timeParts = (seconds: boolean, tz: string): Intl.DateTimeFormatOptions => (hours === "12h"
+  ? { timeZone: tz, hour: "numeric", minute: "2-digit", ...(seconds ? { second: "2-digit" } : {}), hour12: true }
+  : { timeZone: tz, hour: "2-digit", minute: "2-digit", ...(seconds ? { second: "2-digit" } : {}), hourCycle: "h23" });
+
 export function clockOf(stamp: unknown, tz = TZ): string {
   const parsed = Date.parse(text(stamp) ?? "");
   if (!Number.isFinite(parsed)) return "--:--";
-  return new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(parsed);
+  return new Intl.DateTimeFormat("en-US", timeParts(false, tz)).format(parsed);
+}
+
+/** clockOf with seconds ("18:07:33" or "6:07:33 PM"). */
+export function clockWithSeconds(stamp: unknown, tz = TZ): string {
+  const parsed = Date.parse(text(stamp) ?? "");
+  if (!Number.isFinite(parsed)) return "--:--:--";
+  return new Intl.DateTimeFormat("en-US", timeParts(true, tz)).format(parsed);
 }
 
 export function dayOf(stamp: unknown, tz = TZ): string | null {

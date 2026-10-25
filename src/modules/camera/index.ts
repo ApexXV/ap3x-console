@@ -1,6 +1,6 @@
 import { button, el } from "../../core/dom";
 import { note } from "../../core/detail";
-import { clockOf } from "../../core/format";
+import { clockWithSeconds } from "../../core/format";
 import type { ModuleManifest, RunMode } from "../../core/types";
 import "./camera.css";
 
@@ -38,8 +38,7 @@ function attach(body: HTMLElement, m: CameraModel, chipHost: () => HTMLElement |
     lastFrame.set(m.url, { good: entry.lastGood, failed: false });
     img.classList.add("is-live");
     empty.hidden = true;
-    const now = new Date();
-    stamp.textContent = `${clockOf(now.toISOString())}:${String(now.getSeconds()).padStart(2, "0")}`;
+    stamp.textContent = clockWithSeconds(new Date().toISOString());
     scan.classList.remove("run"); void scan.offsetWidth; scan.classList.add("run");
     setChip("LIVE", "good");
   };

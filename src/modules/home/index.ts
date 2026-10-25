@@ -26,7 +26,11 @@ function tickClock(body: HTMLElement): void {
     const now = new Date();
     const time = body.querySelector(".home-time");
     const date = body.querySelector(".home-date");
-    if (time) time.textContent = clockOf(now.toISOString());
+    // 12-hour clocks show the digits big and AM/PM small beside them.
+    const [digits, meridiem] = clockOf(now.toISOString()).split(" ");
+    if (time) time.textContent = digits ?? "";
+    const suffix = body.querySelector(".home-meridiem");
+    if (suffix) suffix.textContent = meridiem ?? "";
     if (date) date.textContent = now.toLocaleDateString("en-US", { timeZone: TZ, weekday: "long", month: "long", day: "numeric" }).toUpperCase();
   };
   paint();
@@ -85,7 +89,7 @@ export const homeModule: ModuleManifest<HomeModel, HomeSettings> = {
     const hero = el("div", "home-hero");
     const clock = el("div", "home-clock");
     const time = el("b", "home-time");
-    clock.append(time);
+    clock.append(time, el("span", "home-meridiem"));
     const left = el("div", "home-when");
     left.append(clock, el("span", "home-date"));
     const wx = el("div", "home-wx");
