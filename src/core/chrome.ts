@@ -228,6 +228,11 @@ export class Chrome {
     if (remember) this.save("focus", this.focus);
   }
 
+  /** Put the current focus back after the regions were rebuilt (the layout editor). */
+  reapplyFocus(): void {
+    if (this.host.layout.focus || this.tabs) this.setFocus(this.focus, false);
+  }
+
   /** Region heads widen their region; clicking the widened one again returns to balanced. */
   regionHeadClick(regionId: string): void {
     if (!this.host.layout.focus?.[regionId]) return;

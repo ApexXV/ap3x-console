@@ -180,3 +180,65 @@ describe("tabs navigation (command-1080)", () => {
     expect(validateLayout(bad, known).some((p) => p.includes("tabs"))).toBe(true);
   });
 });
+
+describe("layout editor edits", async () => {
+  const ed = await import("../src/core/editor");
+
+  it("moves a boundary within limits and formats tracks", () => {
+    expect(ed.moveBoundary([100, 100, 100], 0, 30)).toEqual([130, 70, 100]);
+    expect(ed.moveBoundary([100, 100, 100], 0, 500)[1]).toBeCloseTo(18); // 6% of 300
+    expect(ed.formatTracks([250, 400, 250], 3)).toBe("minmax(0, 0.83fr) minmax(0, 1.33fr) minmax(0, 0.83fr)");
+  });
+
+  it("reads and rewrites spans", () => {
+    expect(ed.spanOf(undefined, 6)).toBe(1);
+    expect(ed.spanOf("span 4", 6)).toBe(4);
+    expect(ed.spanOf("1 / -1", 3)).toBe(3);
+    expect(ed.spanOf("5 / span 2", 6)).toBe(2);
+    expect(ed.withSpan("1 / span 4", 3)).toBe("1 / span 3");
+    expect(ed.withSpan("span 2", 1)).toBeUndefined();
+    expect(ed.withSpan(undefined, 2)).toBe("span 2");
+  });
+
+  it("swaps contents but keeps each spot's size, across regions too", () => {
+    const next = ed.swapPanels(layout(), "fm", "portfolio");
+    const ops = next.regions[0]!.panels, mk = next.regions[2]!.panels;
+    expect(ops[8]).toMatchObject({ id: "portfolio", module: "portfolio", column: "1 / -1" });
+    expect(mk[0]).toMatchObject({ id: "fm", module: "clickup" });
+    expect(mk[0]!.column).toBeUndefined();
+    expect(validateLayout(next, known)).toEqual([]);
+  });
+
+  it("adds, removes and resizes panels, and keeps region chips valid", () => {
+    let next = ed.addPanel(layout(), "markets", "weather");
+    next = ed.addPanel(next, "markets", "weather");
+    expect(next.regions[2]!.panels.slice(-2).map((p) => p.id)).toEqual(["weather", "weather-2"]);
+    next = ed.removePanel(next, "portfolio");
+    expect(next.regions[2]!.chipFrom).toEqual([]);
+    next = ed.resizePanel(next, "quotes", 1, 2);
+    expect(next.regions[2]!.panels.find((p) => p.id === "quotes")).toMatchObject({ row: "span 2" });
+    expect(validateLayout(next, known)).toEqual([]);
+  });
+
+  it("saves widths into the current focus preset", () => {
+    expect(ed.setRegionWidths(layout(), "balanced", "minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr)").regionColumns).toBe("minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr)");
+    const focused = ed.setRegionWidths(layout(), "ops", "minmax(0, 3fr) minmax(0, 1fr) minmax(0, 1fr)");
+    expect(focused.focus!.ops).toBe("minmax(0, 3fr) minmax(0, 1fr) minmax(0, 1fr)");
+    expect(focused.regionColumns).toBe("5fr 8fr 5fr");
+  });
+
+  it("keeps a saved edit only while it is valid and matches the regions", () => {
+    const store = new Map<string, string>();
+    const storage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v), removeItem: (k: string) => void store.delete(k) } as Storage;
+    const base = layout();
+    const edited = ed.removePanel(base, "threat");
+    ed.saveLayout(edited, base, storage);
+    expect(ed.loadSaved(base, storage, known)).toEqual({ layout: edited, baseChanged: false });
+    const released = { ...base, title: "COMMAND 57 · NEW" };
+    expect(ed.loadSaved(released, storage, known)?.baseChanged).toBe(true);
+    store.set(ed.savedKey(base.id), JSON.stringify({ v: 1, base: "x", layout: { ...edited, regions: edited.regions.slice(1) } }));
+    expect(ed.loadSaved(base, storage, known)).toBeNull();
+    ed.clearSaved(base, storage);
+    expect(store.size).toBe(0);
+  });
+});

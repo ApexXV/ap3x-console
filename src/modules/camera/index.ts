@@ -33,7 +33,8 @@ function attach(body: HTMLElement, m: CameraModel, chipHost: () => HTMLElement |
   const empty = el("div", "cam-empty", m.mode === "demo" ? "DEMO · LIVE FRAMES ON THE HOST ONLY" : "WAITING FOR A FRAME");
   frame.append(img, scan, stamp, empty);
   body.replaceChildren(frame);
-  const entry = { timer: setInterval(() => load(), m.everyMs), lastGood: 0, url: m.url };
+  // The loop stops by itself once the panel leaves the page (the layout editor rebuilds panels).
+  const entry = { timer: setInterval(() => { if (body.isConnected) load(); else { clearInterval(entry.timer); state.delete(body); } }, m.everyMs), lastGood: 0, url: m.url };
   state.set(body, entry);
   const setChip = (label: string, tone: string) => {
     const chip = chipHost();

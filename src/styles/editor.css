@@ -1,0 +1,58 @@
+/* ---------- layout editor (pencil in the top bar, or E) ---------- */
+.edit-toggle svg { fill: none; stroke: var(--ap3x-cyan); stroke-width: 2; stroke-linejoin: round; }
+.console[data-editing="on"] .edit-toggle { border-color: var(--warn); background: rgba(242, 181, 79, .25); }
+.console[data-editing="on"] .edit-toggle svg { stroke: var(--warn); }
+
+.console[data-editing="on"] .regions, .console[data-editing="on"] .region-grid { position: relative; }
+.console[data-editing="on"] .panel { outline: .1em dashed rgba(242, 181, 79, .55); outline-offset: -.1em; cursor: default; }
+.console[data-editing="on"] .panel-body { pointer-events: none; }
+.console[data-editing="on"] .panel.is-moving { opacity: .45; }
+.console[data-editing="on"] .panel.is-drop { outline: .2em solid var(--warn); }
+.console[data-editing="on"] .panel.is-resizing { outline: .2em solid var(--ap3x-cyan); z-index: 5; }
+.console.is-dragging, .console.is-dragging * { user-select: none; }
+
+.edit-tools { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+.edit-tools > * { pointer-events: auto; }
+.edit-grip, .edit-remove { position: absolute; top: .5em; cursor: grab; border: .07em solid var(--warn); background: rgba(10, 31, 43, .92); color: var(--warn);
+  font-family: var(--body); font-weight: 800; letter-spacing: .14em; }
+.edit-grip { left: 50%; transform: translateX(-50%); padding: .3em .8em; font-size: .7em; }
+.edit-grip:active { cursor: grabbing; }
+.edit-remove { right: .5em; width: 1.6em; height: 1.6em; cursor: pointer; font-size: .8em; line-height: 1; }
+.edit-remove:hover { background: var(--bad); color: var(--canvas); border-color: var(--bad); }
+.edit-corner { position: absolute; right: .55em; bottom: .55em; width: 1.6em; height: 1.6em; cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--warn) 50%); }
+.edit-size { position: absolute; left: .6em; bottom: .5em; padding: .15em .5em; background: rgba(10, 31, 43, .92); color: var(--warn); font-family: var(--mono); font-size: .65em; }
+
+.track-handle { position: absolute; z-index: 7; background: transparent; }
+.track-handle::after { content: ""; position: absolute; background: var(--warn); opacity: .55; }
+.track-handle:hover::after, .console.is-dragging .track-handle::after { opacity: 1; }
+.track-handle.is-columns { top: 0; bottom: 0; width: 1em; margin-left: -.5em; cursor: col-resize; }
+.track-handle.is-columns::after { top: 0; bottom: 0; left: calc(50% - .07em); width: .14em; }
+.track-handle.is-rows { left: 0; right: 0; height: 1em; margin-top: -.5em; cursor: row-resize; }
+.track-handle.is-rows::after { left: 0; right: 0; top: calc(50% - .07em); height: .14em; }
+.regions > .track-handle.is-columns::after { width: .25em; left: calc(50% - .12em); background: var(--ap3x-cyan); }
+
+.edit-add { margin-left: .8em; padding: .2em .7em; cursor: pointer; border: .07em solid var(--warn); background: rgba(10, 31, 43, .92); color: var(--warn);
+  font-family: var(--body); font-size: .75em; font-weight: 800; letter-spacing: .14em; }
+.edit-add:hover { background: var(--warn); color: var(--canvas); }
+
+.edit-bar { position: absolute; z-index: 45; left: 50%; bottom: 3.2em; transform: translateX(-50%); max-width: calc(100% - 4em); display: flex; align-items: center; gap: .6em;
+  padding: .6em .8em .6em 1.2em; background: rgba(10, 31, 43, .97); border: .1em solid var(--warn); box-shadow: 0 1em 3em rgba(0, 0, 0, .6); }
+.edit-bar > b { color: var(--warn); font-family: var(--display); letter-spacing: .14em; white-space: nowrap; }
+.edit-note { min-width: 0; flex: 1 1 auto; color: var(--muted); font-size: .7em; letter-spacing: .06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.edit-note.is-flash { color: var(--text); }
+.edit-bar button { cursor: pointer; padding: .45em .9em; border: .07em solid var(--line-strong); background: rgba(16, 41, 54, .85); color: var(--text);
+  font-family: var(--body); font-size: .65em; font-weight: 700; letter-spacing: .16em; white-space: nowrap; }
+.edit-bar button:hover:not(:disabled) { background: var(--ap3x-teal); }
+.edit-bar button:disabled { opacity: .4; cursor: default; }
+.edit-bar button:last-of-type { background: var(--warn); color: var(--canvas); border-color: var(--warn); }
+
+.edit-picker { position: absolute; z-index: 46; width: 26em; max-height: 60%; display: flex; flex-direction: column; gap: .6em; padding: 1em;
+  background: rgba(10, 31, 43, .98); border: .1em solid var(--warn); box-shadow: 0 1em 3em rgba(0, 0, 0, .6); }
+.edit-picker > b { color: var(--warn); letter-spacing: .2em; font-size: .8em; }
+.edit-picker-list { display: grid; gap: .3em; overflow: auto; min-height: 0; }
+.edit-picker-item { display: grid; gap: .15em; text-align: left; padding: .5em .7em; cursor: pointer; border: .07em solid var(--line); background: rgba(16, 41, 54, .7); color: var(--text); }
+.edit-picker-item:hover { border-color: var(--warn); background: rgba(242, 181, 79, .12); }
+.edit-picker-item strong { font-size: .8em; letter-spacing: .1em; }
+.edit-picker-item span { color: var(--muted); font-size: .62em; line-height: 1.3; }
+.edit-picker-close { align-self: flex-end; cursor: pointer; padding: .4em .9em; border: .07em solid var(--line-strong); background: transparent; color: var(--text); font-size: .65em; letter-spacing: .16em; }

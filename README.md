@@ -18,7 +18,7 @@ URL parameters: `layout=<id>` (a file in `layouts/`), `demo` (force demo data), 
 | `src/styles/` | Design tokens and shared styles (AP3X Operations palette; sizes in `em` of the layout's stage font size) |
 | `layouts/` | Layout files: `command-57` (7680×2160), `command-1080` (Command 57 one section at a time, 3200×1800 for 1080p screens), `ops-1080` (3200×1800 operations screen), and `lab-touch` (800×480 LabTouch1 touchscreen) |
 | `lively/` | Lively wallpaper package for Command 57 (hosts the console, falls back to the old wall) |
-| `docs/` | [Architecture](docs/ARCHITECTURE.md), [writing a module](docs/MODULES.md), [phase 1 plan](docs/PHASE1.md), [LabTouch1 screen](docs/LAB-TOUCH.md), [releasing](docs/RELEASE.md), [swapping Command 57](docs/SWAP.md) |
+| `docs/` | [Architecture](docs/ARCHITECTURE.md), [writing a module](docs/MODULES.md), [phase 1 plan](docs/PHASE1.md), [LabTouch1 screen](docs/LAB-TOUCH.md), [releasing](docs/RELEASE.md), [swapping Command 57](docs/SWAP.md), [layout editor](docs/EDITOR.md) |
 
 A build is static files with relative paths. On rackmain1, `console-release` builds `main` and serves it from the wall-ui folder as `/console/` (see [docs/RELEASE.md](docs/RELEASE.md)).
 

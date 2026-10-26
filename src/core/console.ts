@@ -1,6 +1,7 @@
 import { ChangeLog, type LoggedChange } from "./changes";
 import { Chrome } from "./chrome";
 import { el, chipNode, setTone, svgEl } from "./dom";
+import { LayoutEditor } from "./editor";
 import { dlist, note, sec, stats } from "./detail";
 import { ageLabel, clockFormat, clockOf, dayOf, setClockFormat, TZ } from "./format";
 import { MusicTile } from "./music";
@@ -28,6 +29,10 @@ export interface ConsoleOptions {
   hub?: SourceHub;
   clock?: () => number;
   storage?: Storage | null;
+  /** The built-in layout when `layout` is a saved edit of it (the editor's RESET goes back to it). */
+  base?: Layout;
+  /** The built-in layout changed since the saved edit was made. */
+  baseChanged?: boolean;
 }
 
 const BASELINE: Priority = {
@@ -41,7 +46,8 @@ const BASELINE: Priority = {
  * the detail overlay. A module that throws only blanks its own panel.
  */
 export class Console {
-  readonly layout: Layout;
+  /** The layout being shown; the layout editor swaps it with relayout(). */
+  layout: Layout;
   readonly changes: ChangeLog;
   private panels: PanelInstance[] = [];
   private hub: SourceHub;
@@ -57,6 +63,7 @@ export class Console {
   private page = 0;
   private idleTimer: ReturnType<typeof setTimeout> | undefined;
   private chrome: Chrome | null = null;
+  private editor: LayoutEditor | null = null;
   private regionsNode!: HTMLElement;
   private tickerNode: HTMLElement | null = null;
   private music: MusicTile | null = null;
@@ -86,12 +93,22 @@ export class Console {
     this.stage = el("div", "stage");
     Object.assign(this.stage.style, { width: `${layout.stage.width}px`, height: `${layout.stage.height}px`, fontSize: `${layout.stage.fontSize}px` });
     if (layout.dock || layout.ticker || layout.nightMode || layout.links) {
+      const self = this; // the chrome always reads the current layout (the editor swaps it)
       this.chrome = new Chrome({
-        layout, root, stage: this.stage, mode: this.options.mode, storage: this.storage,
+        get layout() { return self.layout; }, root, stage: this.stage, mode: this.options.mode, storage: this.storage,
         refresh: () => void this.refresh(), openDetail: (id) => this.openDetail(id), closeDetail: () => this.closeDetail(),
         setRegionColumns: (columns) => { this.regionsNode.style.gridTemplateColumns = columns; },
         showRegion: (id) => { const index = layout.regions.findIndex((r) => r.id === id); if (index >= 0) { this.closeDetail(); this.showPage(index); } },
       });
+    }
+    if (layout.dock) {
+      const self = this;
+      this.editor = new LayoutEditor({
+        get layout() { return self.layout; }, base: this.options.base ?? structuredClone(layout),
+        root, stage: this.stage, storage: this.storage,
+        focus: () => self.chrome?.focus ?? "balanced",
+        relayout: (next) => self.relayout(next),
+      }, this.options.baseChanged);
     }
     this.stage.append(this.buildTopbar(), this.buildRegions());
     if (this.paged && !this.tabbed) this.stage.append(this.buildPageNav());
@@ -146,8 +163,29 @@ export class Console {
   /** One refresh: fetch (or load demo payloads), rebuild every module model, render, rank, log. */
   async refresh(): Promise<void> {
     const now = this.clock();
-    const states = this.options.mode === "demo" ? this.hub.fromPayloads(this.demoPayloads(now)) : await this.hub.refresh();
-    this.states = states;
+    this.states = this.options.mode === "demo" ? this.hub.fromPayloads(this.demoPayloads(now)) : await this.hub.refresh();
+    this.render(now);
+  }
+
+  /**
+   * Show a changed layout (from the layout editor) without reloading: the regions are rebuilt and
+   * drawn from the data already fetched. Only panels and region / column sizes may change; the
+   * stage, chrome, and region ids stay as mounted.
+   */
+  relayout(layout: Layout): void {
+    this.layout = layout;
+    this.closeDetail();
+    const regions = this.buildRegions();
+    this.stage.querySelector(".regions")!.replaceWith(regions);
+    if (this.chrome) this.chrome.reapplyFocus();
+    if (this.paged) this.showPage(this.page);
+    this.render(this.clock(), false);
+    this.stage.dispatchEvent(new CustomEvent("console-relayout"));
+  }
+
+  /** Draw every panel from the last fetched source states. */
+  private render(now: number, log = true): void {
+    const states = this.states;
     const priorities: Priority[] = [];
     const events: ChangeEvent[] = [];
     const ticker: TickerItem[] = [];
@@ -163,7 +201,7 @@ export class Console {
         const priority = panel.module.priority?.(model);
         if (priority) priorities.push(priority);
         if (this.tickerNode && panel.module.ticker) ticker.push(...panel.module.ticker(model, ctx));
-        if (previous !== null && panel.ctx && panel.module.changes && this.options.mode === "live") events.push(...panel.module.changes(previous, model));
+        if (log && previous !== null && panel.ctx && panel.module.changes && this.options.mode === "live") events.push(...panel.module.changes(previous, model));
         panel.model = model;
         panel.ctx = ctx;
         panel.error = null;
@@ -181,7 +219,7 @@ export class Console {
     if (this.tickerNode) {
       renderTicker(this.tickerNode, ticker, `${this.options.mode === "demo" ? "DEMO" : `REFRESH ${this.layout.refreshSeconds ?? 30}S`} · ${clockOf(new Date(now).toISOString())} · AP3XOPERATIONS.COM`);
     }
-    this.restartRing();
+    if (log) this.restartRing();
     if (this.detailId) this.buildDetail();
   }
 
@@ -230,7 +268,11 @@ export class Console {
     const bar = el("header", "topbar");
     const brand = el("div", "brand");
     const title = el("b", "brand-title", this.layout.title);
-    if (this.chrome && this.layout.dock) title.append(this.chrome.toggles());
+    if (this.chrome && this.layout.dock) {
+      const toggles = this.chrome.toggles();
+      if (this.editor) toggles.append(this.editor.toggleButton());
+      title.append(toggles);
+    }
     const sub = el("span", "brand-sub", this.options.mode === "demo" ? "AP3X CONSOLE · DEMO DATA" : "AP3X CONSOLE");
     if (this.layout.logo) {
       const logo = el("img", "brand-logo");
@@ -270,6 +312,7 @@ export class Console {
   }
 
   private buildRegions(): HTMLElement {
+    this.panels = [];
     const regions = el("main", "regions");
     this.regionsNode = regions;
     regions.style.gridTemplateColumns = this.paged ? "minmax(0, 1fr)" : this.layout.regionColumns;
@@ -306,6 +349,7 @@ export class Console {
         if (module.detail) {
           article.classList.add("has-detail");
           article.addEventListener("click", (event) => {
+            if (this.options.root.dataset.editing === "on") return; // the layout editor owns clicks
             if (!(event.target as HTMLElement).closest("button, a")) this.openDetail(spec.id);
           });
         }
