@@ -47,6 +47,17 @@ export interface ChangeEvent {
   text: string;
 }
 
+/** One item for the bottom ticker. `hot` items (today / tonight) lead; the rest follow by `order`. */
+export interface TickerItem {
+  label: string;
+  value: string;
+  hot?: boolean;
+  /** Blurred in privacy mode (dollar amounts). */
+  private?: boolean;
+  /** Lower first among non-hot items (business 10s, FM 20s, markets 30s, feed 40s, weather 50s). */
+  order?: number;
+}
+
 /** A candidate for the top banner. The highest `rank` across all modules wins. */
 export interface Priority {
   rank: number;
@@ -103,6 +114,8 @@ export interface ModuleManifest<M = unknown, S extends Record<string, unknown> =
   /** Demo payloads by source id, for previews and screenshots. */
   demo?(now: number): Record<string, unknown>;
   changes?(previous: M, next: M): ChangeEvent[];
+  /** Items for the layout's bottom ticker, if it has one. */
+  ticker?(model: M, ctx: ModuleContext<S>): TickerItem[];
   priority?(model: M): Priority | null;
 }
 
@@ -125,6 +138,8 @@ export interface LayoutPanel {
 export interface LayoutRegion {
   id: string;
   title: string;
+  /** Short name for dock buttons and page tabs (defaults to the title's last word). */
+  short?: string;
   /** CSS grid templates for the region's panel grid. */
   columns: string;
   rows: string;
@@ -149,4 +164,16 @@ export interface Layout {
   homeAfterSeconds?: number;
   /** "24h" (default) or "12h" for every time shown, e.g. "6:07 PM" on a shared lab screen. */
   clock?: "12h" | "24h";
+  /** Show the command dock (layout focus, refresh, motion, sources, and `links`) in the top bar. */
+  dock?: boolean;
+  /** Region id → regionColumns used while that region is widened from the dock (keys 1, 2, 3…). */
+  focus?: Record<string, string>;
+  /** Other wall pages the dock can open in a side drawer (same origin paths). */
+  links?: { label: string; href: string; title: string; key?: string }[];
+  /** A scrolling ticker along the bottom: today / tonight items first, then module items. */
+  ticker?: boolean;
+  /** Follow the shared 22:00–08:00 night mode (rackmain1's /shared/wall-night-mode.js) with a local toggle. */
+  nightMode?: boolean;
+  /** The floating now-playing tile for the wall playlist (/music/…). */
+  music?: boolean;
 }

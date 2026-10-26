@@ -1,10 +1,13 @@
 import { ChangeLog, type LoggedChange } from "./changes";
+import { Chrome } from "./chrome";
 import { el, chipNode, setTone } from "./dom";
-import { dlist, note, sec } from "./detail";
-import { clockOf, dayOf, setClockFormat, TZ } from "./format";
+import { dlist, note, sec, stats } from "./detail";
+import { ageLabel, clockFormat, clockOf, dayOf, setClockFormat, TZ } from "./format";
+import { MusicTile } from "./music";
 import { getModule } from "./registry";
 import { SourceHub } from "./sources";
-import type { AnyModule, ChangeEvent, DetailView, Layout, LayoutPanel, ModuleContext, Priority, RunMode, SourceState } from "./types";
+import { renderTicker, tickerElement } from "./ticker";
+import type { AnyModule, ChangeEvent, DetailView, Layout, LayoutPanel, ModuleContext, Priority, RunMode, SourceState, Tone, TickerItem } from "./types";
 
 interface PanelInstance {
   spec: LayoutPanel;
@@ -53,6 +56,12 @@ export class Console {
   private changesSeen = 0;
   private page = 0;
   private idleTimer: ReturnType<typeof setTimeout> | undefined;
+  private chrome: Chrome | null = null;
+  private regionsNode!: HTMLElement;
+  private tickerNode: HTMLElement | null = null;
+  private music: MusicTile | null = null;
+  private states: Record<string, SourceState> = {};
+  private lastInput = Date.now();
 
   constructor(private options: ConsoleOptions) {
     this.layout = options.layout;
@@ -76,10 +85,34 @@ export class Console {
     setClockFormat(layout.clock ?? "24h");
     this.stage = el("div", "stage");
     Object.assign(this.stage.style, { width: `${layout.stage.width}px`, height: `${layout.stage.height}px`, fontSize: `${layout.stage.fontSize}px` });
+    if (layout.dock || layout.ticker || layout.nightMode || layout.links) {
+      this.chrome = new Chrome({
+        layout, root, stage: this.stage, mode: this.options.mode, storage: this.storage,
+        refresh: () => void this.refresh(), openDetail: (id) => this.openDetail(id), closeDetail: () => this.closeDetail(),
+        setRegionColumns: (columns) => { this.regionsNode.style.gridTemplateColumns = columns; },
+      });
+    }
     this.stage.append(this.buildTopbar(), this.buildRegions());
     if (this.paged) this.stage.append(this.buildPageNav());
+    if (layout.ticker) {
+      this.tickerNode = tickerElement();
+      this.stage.append(this.tickerNode);
+      this.stage.classList.add("has-ticker");
+    }
+    if (layout.links?.length && this.chrome) this.stage.append(this.chrome.drawerElement());
     this.stage.append(this.buildOverlay());
     root.append(this.stage);
+    this.chrome?.start();
+    if (layout.music) {
+      this.music = new MusicTile(this.stage, layout.stage, this.storage);
+      void this.music.start();
+      document.addEventListener("keydown", (event) => {
+        if (event.key === " " && this.music?.visible && !(event.target as HTMLElement)?.closest?.("button, input")) { event.preventDefault(); this.music.toggle(); }
+      });
+    }
+    // A wallpaper returns to its overview on its own: close a detail view after 2 idle minutes.
+    for (const name of ["pointermove", "pointerdown", "keydown", "wheel"]) document.addEventListener(name, () => { this.lastInput = Date.now(); }, { passive: true });
+    if (!this.paged) setInterval(() => { if (this.detailId && Date.now() - this.lastInput > 120_000) this.closeDetail(); }, 10_000);
     if (this.paged) {
       // Pages layouts are for touch screens: no pointer arrow anywhere on the page.
       document.documentElement.classList.add("touch-ui");
@@ -113,8 +146,10 @@ export class Console {
   async refresh(): Promise<void> {
     const now = this.clock();
     const states = this.options.mode === "demo" ? this.hub.fromPayloads(this.demoPayloads(now)) : await this.hub.refresh();
+    this.states = states;
     const priorities: Priority[] = [];
     const events: ChangeEvent[] = [];
+    const ticker: TickerItem[] = [];
     for (const panel of this.panels) {
       const ctx = this.contextFor(panel, states, now);
       const previous = panel.error ? null : panel.model;
@@ -125,6 +160,7 @@ export class Console {
         panel.chip.replaceWith(panel.chip = chip ? chipNode(chip.label, chip.tone) : chipNode("—", "muted"));
         const priority = panel.module.priority?.(model);
         if (priority) priorities.push(priority);
+        if (this.tickerNode && panel.module.ticker) ticker.push(...panel.module.ticker(model, ctx));
         if (previous !== null && panel.ctx && panel.module.changes && this.options.mode === "live") events.push(...panel.module.changes(previous, model));
         panel.model = model;
         panel.ctx = ctx;
@@ -139,12 +175,15 @@ export class Console {
     }
     this.showPriority(priorities.sort((a, b) => b.rank - a.rank)[0] ?? BASELINE);
     this.logChanges(events, now);
+    if (this.tickerNode) {
+      renderTicker(this.tickerNode, ticker, `${this.options.mode === "demo" ? "DEMO" : `REFRESH ${this.layout.refreshSeconds ?? 30}S`} · ${clockOf(new Date(now).toISOString())} · AP3XOPERATIONS.COM`);
+    }
     if (this.detailId) this.buildDetail();
   }
 
   openDetail(panelId: string): void {
     const panel = this.panels.find((p) => p.spec.id === panelId);
-    if (panelId !== "changes" && !panel?.module.detail) return;
+    if (panelId !== "changes" && panelId !== "sources" && !panel?.module.detail) return;
     this.detailId = panelId;
     this.overlay.hidden = false;
     this.buildDetail();
@@ -181,7 +220,9 @@ export class Console {
   private buildTopbar(): HTMLElement {
     const bar = el("header", "topbar");
     const brand = el("div", "brand");
-    brand.append(el("b", "brand-title", this.layout.title), el("span", "brand-sub", this.options.mode === "demo" ? "AP3X CONSOLE · DEMO DATA" : "AP3X CONSOLE"));
+    const title = el("b", "brand-title", this.layout.title);
+    if (this.chrome && this.layout.dock) title.append(this.chrome.toggles());
+    brand.append(title, el("span", "brand-sub", this.options.mode === "demo" ? "AP3X CONSOLE · DEMO DATA" : "AP3X CONSOLE"));
     const priority = el("div", "priority");
     priority.id = "console-priority";
     const changes = el("button", "changes-button", "CHANGES 0");
@@ -190,18 +231,33 @@ export class Console {
     changes.addEventListener("click", () => this.openDetail("changes"));
     const clock = el("div", "clock");
     clock.id = "console-clock";
-    bar.append(brand, priority, changes, clock);
+    if (this.chrome && this.layout.dock) {
+      bar.classList.add("has-dock");
+      const time = el("div", "clock-time");
+      const date = el("div", "clock-date");
+      clock.append(time, date);
+      if (this.layout.nightMode) clock.append(this.chrome.clockMode());
+      bar.append(brand, priority, this.chrome.dock(changes), clock);
+    } else {
+      bar.append(brand, priority, changes, clock);
+    }
     return bar;
   }
 
   private buildRegions(): HTMLElement {
     const regions = el("main", "regions");
+    this.regionsNode = regions;
     regions.style.gridTemplateColumns = this.paged ? "minmax(0, 1fr)" : this.layout.regionColumns;
     this.layout.regions.forEach((region, index) => {
       const column = el("section", "region");
       column.dataset.region = region.id;
       const head = el("div", "region-head");
       head.append(el("span", "region-index", String(index + 1).padStart(2, "0")), el("span", "", region.title));
+      if (this.layout.focus?.[region.id]) {
+        head.classList.add("is-focusable");
+        head.title = `Widen ${region.title.toLowerCase()}`;
+        head.addEventListener("click", () => this.chrome?.regionHeadClick(region.id));
+      }
       const grid = el("div", "region-grid");
       Object.assign(grid.style, { gridTemplateColumns: region.columns, gridTemplateRows: region.rows });
       for (const spec of region.panels) {
@@ -269,6 +325,8 @@ export class Console {
     let tabsFrom: PanelInstance[] = [];
     if (id === "changes") {
       view = this.changesView();
+    } else if (id === "sources") {
+      view = this.sourcesView();
     } else {
       const panel = this.panels.find((p) => p.spec.id === id);
       if (!panel?.module.detail || !panel.ctx || panel.error) { this.closeDetail(); return; }
@@ -374,9 +432,37 @@ export class Console {
     };
   }
 
+  /** Every feed this layout reads, with its last status: the parity check before a swap. */
+  private sourcesView(): DetailView {
+    const rows = this.hub.ids.map((id) => ({ id, spec: this.hub.spec(id)!, state: this.states[id] }));
+    const tone = (status: string | undefined): Tone => (status === "ok" ? "good" : status === "retained" || status === "stale" ? "warn" : status === "down" ? "bad" : "muted");
+    const count = (status: string) => rows.filter((r) => (r.state?.status ?? "unknown") === status).length;
+    return {
+      title: "SOURCES",
+      chip: { label: `${count("ok")}/${rows.length} OK`, tone: count("down") ? "bad" : count("stale") + count("retained") ? "warn" : "good" },
+      foot: "Optional feeds stay UNKNOWN until they first answer · retained = last good payload kept for up to 10 minutes",
+      columns: "minmax(0, 1fr)", rows: "auto minmax(0, 1fr)",
+      sections: [
+        stats([["FEEDS", rows.length], ["OK", count("ok"), "good"], ["STALE / RETAINED", count("stale") + count("retained"), "warn"], ["DOWN", count("down"), "bad"], ["UNKNOWN", count("unknown"), "muted"]], 5),
+        sec("EVERY FEED THIS LAYOUT READS", dlist(rows.map(({ id, spec, state }) => ({
+          title: `${id} · ${spec.url}`,
+          detail: [spec.optional ? "optional" : null, state?.ageMs !== null && state?.ageMs !== undefined ? `data ${ageLabel(state.ageMs)} old` : null,
+            state?.latencyMs ? `${state.latencyMs} ms` : null, state?.fetchedAt ? `fetched ${clockOf(new Date(state.fetchedAt).toISOString())}` : null].filter(Boolean).join(" · ") || "never answered",
+          tag: (state?.status ?? "unknown").toUpperCase(), tone: tone(state?.status),
+        })))),
+      ],
+    };
+  }
+
   private tickClock(): void {
     const node = this.stage.querySelector<HTMLElement>("#console-clock");
-    if (node) node.textContent = clockOf(new Date(this.clock()).toISOString());
+    if (!node) return;
+    const now = new Date(this.clock());
+    const time = node.querySelector(".clock-time");
+    if (!time) { node.textContent = clockOf(now.toISOString()); return; }
+    time.replaceChildren(document.createTextNode(clockOf(now.toISOString())));
+    if (clockFormat() === "24h") time.append(el("small", "", `:${String(now.getSeconds()).padStart(2, "0")}`));
+    node.querySelector(".clock-date")!.textContent = new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "long", month: "short", day: "numeric", year: "numeric" }).format(now).toUpperCase();
   }
 
   /** Scale the fixed stage to fit the window, centered. */
@@ -385,6 +471,7 @@ export class Console {
     const scale = Math.min(window.innerWidth / width, window.innerHeight / height);
     this.stage.style.setProperty("--scale", String(scale > 0 && Number.isFinite(scale) ? scale : 1));
     this.tickClock();
+    this.chrome?.fitDrawer();
   }
 
   private load(key: string): unknown {

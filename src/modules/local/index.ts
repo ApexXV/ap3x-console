@@ -197,6 +197,8 @@ export const localModule: ModuleManifest<Model> = {
     p.empty.textContent = emptyText(m);
   },
 
+  ticker: (m) => (m.weather.temp === null ? [] : [{ label: "WEATHER", value: `${Math.round(m.weather.temp)}°F ${m.weather.condition ?? ""}`.trim(), order: 50 }]),
+
   chip: chipFor,
 
   detail(m, _ctx, hooks) {

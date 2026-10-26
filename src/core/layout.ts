@@ -22,6 +22,26 @@ export function validateLayout(raw: unknown, knownModules: (id: string) => boole
   if (layout.navigation !== undefined && !["columns", "pages"].includes(layout.navigation)) problems.push('navigation must be "columns" or "pages"');
   if (layout.chrome !== undefined && !["full", "compact"].includes(layout.chrome)) problems.push('chrome must be "full" or "compact"');
   if (layout.clock !== undefined && !["12h", "24h"].includes(layout.clock)) problems.push('clock must be "12h" or "24h"');
+  for (const key of ["dock", "ticker", "nightMode", "music"] as const) {
+    if (layout[key] !== undefined && typeof layout[key] !== "boolean") problems.push(`${key} must be true or false`);
+  }
+  if (layout.focus !== undefined) {
+    const regionIds = new Set((layout.regions ?? []).map((r) => r?.id));
+    if (!layout.focus || typeof layout.focus !== "object" || Array.isArray(layout.focus)) problems.push("focus must map region ids to column templates");
+    else for (const [id, columns] of Object.entries(layout.focus)) {
+      if (!regionIds.has(id)) problems.push(`focus.${id} is not a region`);
+      if (typeof columns !== "string" || !GRID.test(columns)) problems.push(`focus.${id} must be a CSS grid template`);
+    }
+  }
+  if (layout.links !== undefined) {
+    if (!Array.isArray(layout.links)) problems.push("links must be a list");
+    else layout.links.forEach((link, i) => {
+      if (!link || typeof link.label !== "string" || typeof link.title !== "string" || typeof link.href !== "string" || !/^\/(?!\/)[\w./?=&-]*$/.test(link.href)) {
+        problems.push(`links[${i}] needs a label, a title, and a same-origin href starting with /`);
+      }
+      if (link?.key !== undefined && !/^[a-z]$/.test(link.key)) problems.push(`links[${i}].key must be one lowercase letter`);
+    });
+  }
   if (layout.homeAfterSeconds !== undefined && (layout.navigation !== "pages" || !(layout.homeAfterSeconds >= 15 && layout.homeAfterSeconds <= 3600))) {
     problems.push("homeAfterSeconds needs navigation \"pages\" and must be between 15 and 3600");
   }

@@ -1,6 +1,7 @@
 import "./styles/tokens.css";
 import "./styles/base.css";
 import "./styles/detail.css";
+import "./styles/chrome.css";
 import { Console } from "./core/console";
 import { validateLayout } from "./core/layout";
 import { getModule } from "./core/registry";

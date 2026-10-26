@@ -110,6 +110,9 @@ export const labModule: ModuleManifest<LabModel> = {
     body.replaceChildren(grid);
   },
 
+  ticker: (m) => m.devices.filter((d) => ACTIVE.has(d.state) && d.job?.remaining != null && d.job.remaining <= 3600).slice(0, 3)
+    .map((d) => ({ label: "FINISHING", value: `${d.name}${d.job!.name ? ` · ${d.job!.name}` : ""} · ~${etaText(d.job!.remaining)}`, hot: true, order: 3 })),
+
   chip: chipFor,
 
   detail(m, ctx, hooks) {

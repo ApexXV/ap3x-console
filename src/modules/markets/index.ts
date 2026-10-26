@@ -244,6 +244,8 @@ export const watchlistModule: ModuleManifest<MarketsModel> = {
     body.replaceChildren(grid);
   },
 
+  ticker: (mk) => mk.quotes.slice(0, 8).map((q) => ({ label: q.symbol, value: `${money(q.price)} ${signedPct(q.m15 ?? q.m5 ?? null)}`, order: 30 })),
+
   chip: quotesChip,
 
   detail(mk) {
