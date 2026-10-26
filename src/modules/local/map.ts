@@ -8,6 +8,7 @@ import { altitudeBand, altitudeText, type LocalModel, severityTone } from "./par
 
 interface Entry {
   map: L.Map;
+  bounds: L.LatLngBoundsExpression | null;
   overlay: L.ImageOverlay | null;
   url: string | null;
   fitted: string | null;
@@ -40,11 +41,22 @@ export function updateRadarMap(container: HTMLElement, local: LocalModel, option
         minZoom: 4, maxZoom: 12, crossOrigin: true, keepBuffer: 1, updateWhenIdle: true,
         attribution: "&copy; OpenStreetMap contributors · Radar NOAA · Aircraft adsb.fi",
       }).addTo(map);
-      entry = { map, overlay: null, url: null, fitted: null, shapes: null, shapeKey: null, planes: L.layerGroup().addTo(map), planeKey: null };
+      entry = { map, bounds: null, overlay: null, url: null, fitted: null, shapes: null, shapeKey: null, planes: L.layerGroup().addTo(map), planeKey: null };
       maps.set(container, entry);
+      // Re-fit when the panel changes size (a tab shown, a column widened), not only on the next refresh.
+      if (typeof ResizeObserver !== "undefined") {
+        const fresh = entry;
+        new ResizeObserver(() => {
+          if (!container.clientWidth || !fresh.bounds) return;
+          fresh.map.invalidateSize(false);
+          fresh.map.fitBounds(fresh.bounds, { animate: false, padding: [0, 0] });
+          fresh.fitted = JSON.stringify(fresh.bounds);
+        }).observe(container);
+      }
     }
     const e = entry;
     e.map.invalidateSize(false);
+    e.bounds = local.radarBounds;
     const boundsKey = JSON.stringify(local.radarBounds);
     if (e.fitted !== boundsKey && container.clientWidth > 0) {
       e.map.fitBounds(local.radarBounds, { animate: false, padding: [0, 0] });

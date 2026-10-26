@@ -19,7 +19,11 @@ export function validateLayout(raw: unknown, knownModules: (id: string) => boole
   if (layout.refreshSeconds !== undefined && !(layout.refreshSeconds >= 5 && layout.refreshSeconds <= 3600)) {
     problems.push("refreshSeconds must be between 5 and 3600");
   }
-  if (layout.navigation !== undefined && !["columns", "pages"].includes(layout.navigation)) problems.push('navigation must be "columns" or "pages"');
+  if (layout.navigation !== undefined && !["columns", "pages", "tabs"].includes(layout.navigation)) problems.push('navigation must be "columns", "pages" or "tabs"');
+  if (layout.navigation === "tabs" && !layout.dock) problems.push('navigation "tabs" needs the dock (dock: true) to switch regions');
+  if (layout.defaultRegion !== undefined && (layout.navigation !== "tabs" || !(layout.regions ?? []).some((r) => r?.id === layout.defaultRegion))) {
+    problems.push("defaultRegion needs navigation \"tabs\" and must be a region id");
+  }
   if (layout.chrome !== undefined && !["full", "compact"].includes(layout.chrome)) problems.push('chrome must be "full" or "compact"');
   if (layout.clock !== undefined && !["12h", "24h"].includes(layout.clock)) problems.push('clock must be "12h" or "24h"');
   for (const key of ["dock", "ticker", "nightMode", "music"] as const) {

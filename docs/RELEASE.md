@@ -35,4 +35,5 @@ Use the same SSH key or deploy key the other repositories use on rackmain1.
 | --- | --- |
 | LabTouch1 (800×480) | `http://rackmain1:3098/console/index.html?layout=lab-touch` |
 | Operations (1080p and up) | `http://rackmain1:3098/console/index.html?layout=ops-1080` |
-| Command 57 preview | `http://rackmain1:3098/console/index.html?layout=command-57` |
+| Command 57 (57-inch wall) | `http://rackmain1:3098/console/index.html?layout=command-57` |
+| Command 57 on a 1080p screen | `http://rackmain1:3098/console/index.html?layout=command-1080` |

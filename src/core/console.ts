@@ -80,7 +80,7 @@ export class Console {
     root.replaceChildren();
     root.classList.add("console");
     root.dataset.layout = layout.id;
-    root.dataset.navigation = this.paged ? "pages" : "columns";
+    root.dataset.navigation = layout.navigation ?? "columns";
     root.dataset.chrome = layout.chrome ?? "full";
     setClockFormat(layout.clock ?? "24h");
     this.stage = el("div", "stage");
@@ -90,10 +90,11 @@ export class Console {
         layout, root, stage: this.stage, mode: this.options.mode, storage: this.storage,
         refresh: () => void this.refresh(), openDetail: (id) => this.openDetail(id), closeDetail: () => this.closeDetail(),
         setRegionColumns: (columns) => { this.regionsNode.style.gridTemplateColumns = columns; },
+        showRegion: (id) => { const index = layout.regions.findIndex((r) => r.id === id); if (index >= 0) { this.closeDetail(); this.showPage(index); } },
       });
     }
     this.stage.append(this.buildTopbar(), this.buildRegions());
-    if (this.paged) this.stage.append(this.buildPageNav());
+    if (this.paged && !this.tabbed) this.stage.append(this.buildPageNav());
     if (layout.ticker) {
       this.tickerNode = tickerElement();
       this.stage.append(this.tickerNode);
@@ -112,8 +113,8 @@ export class Console {
     }
     // A wallpaper returns to its overview on its own: close a detail view after 2 idle minutes.
     for (const name of ["pointermove", "pointerdown", "keydown", "wheel"]) document.addEventListener(name, () => { this.lastInput = Date.now(); }, { passive: true });
-    if (!this.paged) setInterval(() => { if (this.detailId && Date.now() - this.lastInput > 120_000) this.closeDetail(); }, 10_000);
-    if (this.paged) {
+    if (!this.paged || this.tabbed) setInterval(() => { if (this.detailId && Date.now() - this.lastInput > 120_000) this.closeDetail(); }, 10_000);
+    if (this.paged && !this.tabbed) {
       // Pages layouts are for touch screens: no pointer arrow anywhere on the page.
       document.documentElement.classList.add("touch-ui");
       this.showPage(0);
@@ -214,8 +215,13 @@ export class Console {
     return this.page;
   }
 
+  /** One region at a time: "pages" (touch tab bar) or "tabs" (switched from the dock). */
   private get paged(): boolean {
-    return this.layout.navigation === "pages";
+    return this.layout.navigation === "pages" || this.layout.navigation === "tabs";
+  }
+
+  private get tabbed(): boolean {
+    return this.layout.navigation === "tabs";
   }
 
   // ---------------------------------------------------------------- building

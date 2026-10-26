@@ -1,0 +1,189 @@
+{
+  "id": "command-1080",
+  "title": "COMMAND 57",
+  "logo": "/command-57-assets/ap3x-logo-horizontal-reversed.png",
+  "stage": {
+    "width": 3200,
+    "height": 1800,
+    "fontSize": 30
+  },
+  "refreshSeconds": 30,
+  "regionColumns": "minmax(0, 1fr)",
+  "navigation": "tabs",
+  "defaultRegion": "business",
+  "dock": true,
+  "ticker": true,
+  "nightMode": true,
+  "music": true,
+  "links": [
+    {
+      "label": "BUSINESS",
+      "title": "Business Control",
+      "href": "/business-canary.html",
+      "key": "b"
+    },
+    {
+      "label": "FINANCE",
+      "title": "Finance",
+      "href": "/finance-canary.html",
+      "key": "f"
+    },
+    {
+      "label": "MARKETS",
+      "title": "Markets",
+      "href": "/markets-canary.html",
+      "key": "k"
+    },
+    {
+      "label": "LOCAL OPS",
+      "title": "Local Ops",
+      "href": "/local-ops-canary.html",
+      "key": "l"
+    },
+    {
+      "label": "UCS003",
+      "title": "Unified Command Surface",
+      "href": "/ucs003-canary.html",
+      "key": "u"
+    }
+  ],
+  "regions": [
+    {
+      "id": "ops",
+      "title": "OPERATIONS",
+      "short": "OPS",
+      "columns": "repeat(3, minmax(0, 1fr))",
+      "rows": "1fr 1fr .85fr .9fr",
+      "chipFrom": [
+        "services",
+        "host"
+      ],
+      "panels": [
+        {
+          "id": "host",
+          "module": "host",
+          "title": "RACKMAIN1 HOST"
+        },
+        {
+          "id": "camera",
+          "module": "camera",
+          "title": "CAMERA ALPHA",
+          "settings": {
+            "label": "Camera Alpha"
+          }
+        },
+        {
+          "id": "local",
+          "module": "local",
+          "title": "LOCAL \u00b7 WEATHER & RADAR",
+          "row": "span 2"
+        },
+        {
+          "id": "media",
+          "module": "media"
+        },
+        {
+          "id": "lab",
+          "module": "lab-printers"
+        },
+        {
+          "id": "services",
+          "module": "services"
+        },
+        {
+          "id": "threat",
+          "module": "threat"
+        },
+        {
+          "id": "feeds",
+          "module": "feed-health"
+        },
+        {
+          "id": "fm",
+          "module": "clickup",
+          "title": "FM OPERATIONS \u00b7 CLICKUP",
+          "column": "1 / -1"
+        }
+      ]
+    },
+    {
+      "id": "business",
+      "title": "AP3X OPERATIONS LLC \u00b7 BUSINESS",
+      "short": "BUSINESS",
+      "columns": "repeat(6, minmax(0, 1fr))",
+      "rows": "1.05fr .95fr 1.15fr",
+      "chipFrom": [
+        "bank"
+      ],
+      "panels": [
+        {
+          "id": "bank",
+          "module": "business-bank",
+          "column": "span 2"
+        },
+        {
+          "id": "receipts",
+          "module": "business-receipts",
+          "column": "span 2"
+        },
+        {
+          "id": "review",
+          "module": "business-review",
+          "column": "span 2"
+        },
+        {
+          "id": "cashflow",
+          "module": "business-cashflow",
+          "column": "1 / span 4",
+          "row": "2"
+        },
+        {
+          "id": "health",
+          "module": "business-health",
+          "column": "5 / span 2",
+          "row": "2 / span 2"
+        },
+        {
+          "id": "obligations",
+          "module": "business-obligations",
+          "column": "1 / span 2",
+          "row": "3"
+        },
+        {
+          "id": "allocation",
+          "module": "business-allocation",
+          "column": "3 / span 2",
+          "row": "3"
+        }
+      ]
+    },
+    {
+      "id": "markets",
+      "title": "FINANCE & MARKETS",
+      "short": "MARKETS",
+      "columns": "repeat(2, minmax(0, 1fr))",
+      "rows": "repeat(2, minmax(0, 1fr))",
+      "chipFrom": [
+        "portfolio"
+      ],
+      "panels": [
+        {
+          "id": "portfolio",
+          "module": "portfolio"
+        },
+        {
+          "id": "quotes",
+          "module": "watchlist"
+        },
+        {
+          "id": "sentinel",
+          "module": "sentinel"
+        },
+        {
+          "id": "control",
+          "module": "control"
+        }
+      ]
+    }
+  ]
+}

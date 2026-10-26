@@ -153,3 +153,30 @@ describe("region head chips", () => {
     expect(validateLayout({ ...l, regions: [{ ...l.regions[0]!, chipFrom: ["portfolio"] }, ...l.regions.slice(1)] }, known).some((p) => p.includes("chipFrom"))).toBe(true);
   });
 });
+
+describe("tabs navigation (command-1080)", () => {
+  beforeEach(() => { document.body.innerHTML = '<div id="app"></div>'; });
+
+  it("shows one region, switched from the dock and the number keys, business first", async () => {
+    const { default: c1080 } = await import("../layouts/command-1080.json");
+    const root = document.getElementById("app")!;
+    new Console({ layout: structuredClone(c1080) as unknown as Layout, root, mode: "demo", storage: null }).mount();
+    const shown = () => [...root.querySelectorAll<HTMLElement>(".region")].filter((r) => !r.hidden).map((r) => r.dataset.region);
+    expect(root.dataset.navigation).toBe("tabs");
+    expect(root.querySelector(".page-nav")).toBeNull();
+    expect(document.documentElement.classList.contains("touch-ui")).toBe(false);
+    expect(shown()).toEqual(["business"]);
+    expect([...root.querySelectorAll(".dock [data-focus-set]")].map((b) => b.textContent)).toEqual(["OPS", "BUSINESS", "MARKETS"]);
+    key("3");
+    expect(shown()).toEqual(["markets"]);
+    root.querySelector<HTMLButtonElement>('.dock [data-focus-set="ops"]')!.click();
+    expect(shown()).toEqual(["ops"]);
+    key("0");
+    expect(shown()).toEqual(["business"]);
+  });
+
+  it("needs the dock", () => {
+    const bad = { ...layout(), navigation: "tabs", dock: false } as unknown as Layout;
+    expect(validateLayout(bad, known).some((p) => p.includes("tabs"))).toBe(true);
+  });
+});
