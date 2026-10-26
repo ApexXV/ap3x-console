@@ -38,6 +38,8 @@ export interface SourceState {
 export interface Chip {
   label: string;
   tone: Tone;
+  /** Blurred in privacy mode (amounts). */
+  private?: boolean;
 }
 
 /** One line for the Changes timeline. Repeats merge by kicker + text. */
@@ -110,6 +112,8 @@ export interface ModuleManifest<M = unknown, S extends Record<string, unknown> =
   /** Fills the panel body. Called on every refresh with a fresh model. */
   render(body: HTMLElement, model: M, ctx: ModuleContext<S>): void;
   chip?(model: M): Chip;
+  /** A one-line summary for the region head, when the layout asks this panel for one (null = no opinion). */
+  regionChip?(model: M, ctx: ModuleContext<S>): Chip | null;
   detail?(model: M, ctx: ModuleContext<S>, hooks: DetailHooks): DetailView;
   /** Demo payloads by source id, for previews and screenshots. */
   demo?(now: number): Record<string, unknown>;
@@ -143,6 +147,8 @@ export interface LayoutRegion {
   /** CSS grid templates for the region's panel grid. */
   columns: string;
   rows: string;
+  /** Panel ids whose module summarises the region in its head; the first with something to say wins. */
+  chipFrom?: string[];
   panels: LayoutPanel[];
 }
 
@@ -156,8 +162,11 @@ export interface Layout {
   regions: LayoutRegion[];
   refreshSeconds?: number;
   /** "columns" (default) shows every region side by side; "pages" shows one region at a time
-   *  with a touch tab bar, for small screens. */
-  navigation?: "columns" | "pages";
+   *  with a touch tab bar, for small screens; "tabs" shows one region at a time, switched from
+   *  the dock (the wall's 1080p mode). */
+  navigation?: "columns" | "pages" | "tabs";
+  /** Tabs only: the region shown first and for "balanced" (defaults to the first region). */
+  defaultRegion?: string;
   /** "compact" shrinks the top bar to one line (title, priority, clock) for small screens. */
   chrome?: "full" | "compact";
   /** Pages only: return to the first page after this many seconds without a touch. */

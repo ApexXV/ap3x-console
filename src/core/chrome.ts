@@ -16,6 +16,8 @@ export interface ChromeHost {
   openDetail(id: string): void;
   closeDetail(): void;
   setRegionColumns(columns: string): void;
+  /** Tabs layouts: show this region. */
+  showRegion(id: string): void;
 }
 
 const MOTION_LEVELS = ["full", "low", "off"] as const;
@@ -88,7 +90,14 @@ export class Chrome {
     nav.setAttribute("aria-label", "Command dock");
     const row = el("div", "dock-row");
     row.append(el("span", "dock-label", "LAYOUT"));
-    if (layout.focus) {
+    if (this.tabs) {
+      layout.regions.forEach((region, index) => {
+        const b = button(region.short ?? region.title.split(" ").pop()!, `Show ${region.title.toLowerCase()} (${index + 1})`, () => this.setFocus(region.id));
+        b.dataset.focusSet = region.id;
+        this.focusButtons.push(b);
+        row.append(b);
+      });
+    } else if (layout.focus) {
       layout.regions.forEach((region, index) => {
         if (!layout.focus?.[region.id]) return;
         const b = button(region.short ?? region.title.split(" ").pop()!, `Widen ${region.title.toLowerCase()} (${index + 1})`, () => this.setFocus(region.id));
@@ -142,7 +151,7 @@ export class Chrome {
       (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "low" : "full"), false);
     this.setPrivacy(this.privacyDefaultOn || this.load("privacy") === "on", false);
     document.addEventListener("pointermove", () => { if (this.privacyDefaultOn && root.dataset.privacy === "off") this.armPrivacyIdle(); }, { passive: true });
-    if (layout.focus) this.setFocus(this.params.get("focus") || (this.load("focus") as string | null) || "balanced", false);
+    if (layout.focus || this.tabs) this.setFocus(this.params.get("focus") || (this.load("focus") as string | null) || "balanced", false);
     if (layout.nightMode) {
       window.addEventListener("wall-display-mode-change", (event) => {
         this.nightDetail = ((event as CustomEvent).detail ?? null) as typeof this.nightDetail;
@@ -193,16 +202,35 @@ export class Chrome {
     this.privacyIdle = setTimeout(() => this.setPrivacy(true, false), 5 * 60_000);
   }
 
+  private get tabs(): boolean {
+    return this.host.layout.navigation === "tabs";
+  }
+
   /* ---------------- focus: widen one region ---------------- */
 
   setFocus(focus: string, remember = true): void {
     const { layout } = this.host;
+    if (this.tabs) {
+      // Tabs layouts show one region; "balanced" (0, or the Lively default) means the default region.
+      const region = layout.regions.find((r) => r.id === focus) ?? layout.regions.find((r) => r.id === layout.defaultRegion) ?? layout.regions[0]!;
+      this.focus = region.id;
+      this.host.root.dataset.focus = region.id;
+      this.host.showRegion(region.id);
+      for (const b of this.focusButtons) b.classList.toggle("is-active", b.dataset.focusSet === region.id);
+      if (remember) this.save("focus", region.id);
+      return;
+    }
     const valid = focus === "balanced" || Boolean(layout.focus?.[focus]);
     this.focus = valid ? focus : "balanced";
     this.host.root.dataset.focus = this.focus;
     this.host.setRegionColumns(this.focus === "balanced" ? layout.regionColumns : layout.focus![this.focus]!);
     for (const b of this.focusButtons) b.classList.toggle("is-active", b.dataset.focusSet === this.focus);
     if (remember) this.save("focus", this.focus);
+  }
+
+  /** Put the current focus back after the regions were rebuilt (the layout editor). */
+  reapplyFocus(): void {
+    if (this.host.layout.focus || this.tabs) this.setFocus(this.focus, false);
   }
 
   /** Region heads widen their region; clicking the widened one again returns to balanced. */
@@ -303,7 +331,7 @@ export class Chrome {
     const { layout } = this.host;
     const key = event.key.toLowerCase();
     if (key === "escape") { this.closeDrawer(); this.host.closeDetail(); return; }
-    if (layout.focus && /^[0-9]$/.test(key)) {
+    if ((layout.focus || this.tabs) && /^[0-9]$/.test(key)) {
       const region = key === "0" ? "balanced" : layout.regions[Number(key) - 1]?.id;
       if (region) this.setFocus(region);
       return;

@@ -40,4 +40,5 @@ Each becomes a module with its existing contract, demo data, detail view, change
 - [x] Layout parity check: console and old wall side by side in demo; remaining differences listed in [SWAP.md](SWAP.md)
 - [x] Release path: `console-release` builds on rackmain1 and installs `dist/` as wall-ui/console/ with plan / apply / verify / undo ([RELEASE.md](RELEASE.md))
 - [ ] Switch Lively to the console layout; keep the old wall as a fallback for a week ([SWAP.md](SWAP.md), package in `lively/command-57-console/`, falls back to the old wall on its own)
-- [ ] A layout editor (drag panels, pick modules) on top of the validated layout format
+- [x] Layout editor: edit mode from the top bar (E): column widths per dock preset, track lines, swap / resize / add / remove panels, undo, reset, export / import ([EDITOR.md](EDITOR.md))
+- [x] Command 57 on 1080p screens: `command-1080`, one section at a time from the dock

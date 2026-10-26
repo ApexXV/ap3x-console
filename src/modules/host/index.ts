@@ -99,6 +99,7 @@ export const hostModule: ModuleManifest<HostModel, { name: string; nodes: string
     body.replaceChildren(rings, facts, nodes);
   },
 
+  regionChip: (h) => (h.available ? { label: h.posture, tone: toneFor(h.posture) } : null),
   chip: (h) => ({ label: h.available ? h.posture : "NO STATUS", tone: h.available ? toneFor(h.posture) : "muted" }),
 
   detail(h, ctx) {

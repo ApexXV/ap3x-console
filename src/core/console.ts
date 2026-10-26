@@ -1,13 +1,14 @@
 import { ChangeLog, type LoggedChange } from "./changes";
 import { Chrome } from "./chrome";
-import { el, chipNode, setTone } from "./dom";
+import { el, chipNode, setTone, svgEl } from "./dom";
+import { LayoutEditor } from "./editor";
 import { dlist, note, sec, stats } from "./detail";
 import { ageLabel, clockFormat, clockOf, dayOf, setClockFormat, TZ } from "./format";
 import { MusicTile } from "./music";
 import { getModule } from "./registry";
 import { SourceHub } from "./sources";
 import { renderTicker, tickerElement } from "./ticker";
-import type { AnyModule, ChangeEvent, DetailView, Layout, LayoutPanel, ModuleContext, Priority, RunMode, SourceState, Tone, TickerItem } from "./types";
+import type { AnyModule, ChangeEvent, Chip, DetailView, Layout, LayoutPanel, ModuleContext, Priority, RunMode, SourceState, Tone, TickerItem } from "./types";
 
 interface PanelInstance {
   spec: LayoutPanel;
@@ -28,6 +29,10 @@ export interface ConsoleOptions {
   hub?: SourceHub;
   clock?: () => number;
   storage?: Storage | null;
+  /** The built-in layout when `layout` is a saved edit of it (the editor's RESET goes back to it). */
+  base?: Layout;
+  /** The built-in layout changed since the saved edit was made. */
+  baseChanged?: boolean;
 }
 
 const BASELINE: Priority = {
@@ -41,7 +46,8 @@ const BASELINE: Priority = {
  * the detail overlay. A module that throws only blanks its own panel.
  */
 export class Console {
-  readonly layout: Layout;
+  /** The layout being shown; the layout editor swaps it with relayout(). */
+  layout: Layout;
   readonly changes: ChangeLog;
   private panels: PanelInstance[] = [];
   private hub: SourceHub;
@@ -57,6 +63,7 @@ export class Console {
   private page = 0;
   private idleTimer: ReturnType<typeof setTimeout> | undefined;
   private chrome: Chrome | null = null;
+  private editor: LayoutEditor | null = null;
   private regionsNode!: HTMLElement;
   private tickerNode: HTMLElement | null = null;
   private music: MusicTile | null = null;
@@ -80,20 +87,31 @@ export class Console {
     root.replaceChildren();
     root.classList.add("console");
     root.dataset.layout = layout.id;
-    root.dataset.navigation = this.paged ? "pages" : "columns";
+    root.dataset.navigation = layout.navigation ?? "columns";
     root.dataset.chrome = layout.chrome ?? "full";
     setClockFormat(layout.clock ?? "24h");
     this.stage = el("div", "stage");
     Object.assign(this.stage.style, { width: `${layout.stage.width}px`, height: `${layout.stage.height}px`, fontSize: `${layout.stage.fontSize}px` });
     if (layout.dock || layout.ticker || layout.nightMode || layout.links) {
+      const self = this; // the chrome always reads the current layout (the editor swaps it)
       this.chrome = new Chrome({
-        layout, root, stage: this.stage, mode: this.options.mode, storage: this.storage,
+        get layout() { return self.layout; }, root, stage: this.stage, mode: this.options.mode, storage: this.storage,
         refresh: () => void this.refresh(), openDetail: (id) => this.openDetail(id), closeDetail: () => this.closeDetail(),
         setRegionColumns: (columns) => { this.regionsNode.style.gridTemplateColumns = columns; },
+        showRegion: (id) => { const index = layout.regions.findIndex((r) => r.id === id); if (index >= 0) { this.closeDetail(); this.showPage(index); } },
       });
     }
+    if (layout.dock) {
+      const self = this;
+      this.editor = new LayoutEditor({
+        get layout() { return self.layout; }, base: this.options.base ?? structuredClone(layout),
+        root, stage: this.stage, storage: this.storage,
+        focus: () => self.chrome?.focus ?? "balanced",
+        relayout: (next) => self.relayout(next),
+      }, this.options.baseChanged);
+    }
     this.stage.append(this.buildTopbar(), this.buildRegions());
-    if (this.paged) this.stage.append(this.buildPageNav());
+    if (this.paged && !this.tabbed) this.stage.append(this.buildPageNav());
     if (layout.ticker) {
       this.tickerNode = tickerElement();
       this.stage.append(this.tickerNode);
@@ -112,8 +130,8 @@ export class Console {
     }
     // A wallpaper returns to its overview on its own: close a detail view after 2 idle minutes.
     for (const name of ["pointermove", "pointerdown", "keydown", "wheel"]) document.addEventListener(name, () => { this.lastInput = Date.now(); }, { passive: true });
-    if (!this.paged) setInterval(() => { if (this.detailId && Date.now() - this.lastInput > 120_000) this.closeDetail(); }, 10_000);
-    if (this.paged) {
+    if (!this.paged || this.tabbed) setInterval(() => { if (this.detailId && Date.now() - this.lastInput > 120_000) this.closeDetail(); }, 10_000);
+    if (this.paged && !this.tabbed) {
       // Pages layouts are for touch screens: no pointer arrow anywhere on the page.
       document.documentElement.classList.add("touch-ui");
       this.showPage(0);
@@ -145,8 +163,29 @@ export class Console {
   /** One refresh: fetch (or load demo payloads), rebuild every module model, render, rank, log. */
   async refresh(): Promise<void> {
     const now = this.clock();
-    const states = this.options.mode === "demo" ? this.hub.fromPayloads(this.demoPayloads(now)) : await this.hub.refresh();
-    this.states = states;
+    this.states = this.options.mode === "demo" ? this.hub.fromPayloads(this.demoPayloads(now)) : await this.hub.refresh();
+    this.render(now);
+  }
+
+  /**
+   * Show a changed layout (from the layout editor) without reloading: the regions are rebuilt and
+   * drawn from the data already fetched. Only panels and region / column sizes may change; the
+   * stage, chrome, and region ids stay as mounted.
+   */
+  relayout(layout: Layout): void {
+    this.layout = layout;
+    this.closeDetail();
+    const regions = this.buildRegions();
+    this.stage.querySelector(".regions")!.replaceWith(regions);
+    if (this.chrome) this.chrome.reapplyFocus();
+    if (this.paged) this.showPage(this.page);
+    this.render(this.clock(), false);
+    this.stage.dispatchEvent(new CustomEvent("console-relayout"));
+  }
+
+  /** Draw every panel from the last fetched source states. */
+  private render(now: number, log = true): void {
+    const states = this.states;
     const priorities: Priority[] = [];
     const events: ChangeEvent[] = [];
     const ticker: TickerItem[] = [];
@@ -158,10 +197,11 @@ export class Console {
         panel.module.render(panel.body, model, ctx);
         const chip = panel.module.chip?.(model);
         panel.chip.replaceWith(panel.chip = chip ? chipNode(chip.label, chip.tone) : chipNode("—", "muted"));
+        if (chip?.private) panel.chip.dataset.private = "";
         const priority = panel.module.priority?.(model);
         if (priority) priorities.push(priority);
         if (this.tickerNode && panel.module.ticker) ticker.push(...panel.module.ticker(model, ctx));
-        if (previous !== null && panel.ctx && panel.module.changes && this.options.mode === "live") events.push(...panel.module.changes(previous, model));
+        if (log && previous !== null && panel.ctx && panel.module.changes && this.options.mode === "live") events.push(...panel.module.changes(previous, model));
         panel.model = model;
         panel.ctx = ctx;
         panel.error = null;
@@ -173,11 +213,13 @@ export class Console {
         console.error(`[console] ${panel.spec.id} (${panel.module.id})`, error);
       }
     }
+    this.updateRegionChips();
     this.showPriority(priorities.sort((a, b) => b.rank - a.rank)[0] ?? BASELINE);
     this.logChanges(events, now);
     if (this.tickerNode) {
       renderTicker(this.tickerNode, ticker, `${this.options.mode === "demo" ? "DEMO" : `REFRESH ${this.layout.refreshSeconds ?? 30}S`} · ${clockOf(new Date(now).toISOString())} · AP3XOPERATIONS.COM`);
     }
+    if (log) this.restartRing();
     if (this.detailId) this.buildDetail();
   }
 
@@ -211,8 +253,13 @@ export class Console {
     return this.page;
   }
 
+  /** One region at a time: "pages" (touch tab bar) or "tabs" (switched from the dock). */
   private get paged(): boolean {
-    return this.layout.navigation === "pages";
+    return this.layout.navigation === "pages" || this.layout.navigation === "tabs";
+  }
+
+  private get tabbed(): boolean {
+    return this.layout.navigation === "tabs";
   }
 
   // ---------------------------------------------------------------- building
@@ -221,7 +268,11 @@ export class Console {
     const bar = el("header", "topbar");
     const brand = el("div", "brand");
     const title = el("b", "brand-title", this.layout.title);
-    if (this.chrome && this.layout.dock) title.append(this.chrome.toggles());
+    if (this.chrome && this.layout.dock) {
+      const toggles = this.chrome.toggles();
+      if (this.editor) toggles.append(this.editor.toggleButton());
+      title.append(toggles);
+    }
     const sub = el("span", "brand-sub", this.options.mode === "demo" ? "AP3X CONSOLE · DEMO DATA" : "AP3X CONSOLE");
     if (this.layout.logo) {
       const logo = el("img", "brand-logo");
@@ -245,8 +296,14 @@ export class Console {
       bar.classList.add("has-dock");
       const time = el("div", "clock-time");
       const date = el("div", "clock-date");
-      clock.append(time, date);
-      if (this.layout.nightMode) clock.append(this.chrome.clockMode());
+      const ring = svgEl("svg", { class: "refresh-ring", viewBox: "0 0 44 44", "aria-hidden": "true" });
+      ring.append(svgEl("circle", { cx: "22", cy: "22", r: "19" }), svgEl("circle", { class: "refresh-arc", cx: "22", cy: "22", r: "19", pathLength: "100" }));
+      ring.style.setProperty("--refresh", `${this.layout.refreshSeconds ?? 30}s`);
+      const lines = el("div", "clock-lines");
+      lines.append(time, date);
+      if (this.layout.nightMode) lines.append(this.chrome.clockMode());
+      clock.classList.add("has-ring");
+      clock.append(ring, lines);
       bar.append(brand, priority, this.chrome.dock(changes), clock);
     } else {
       bar.append(brand, priority, changes, clock);
@@ -255,6 +312,7 @@ export class Console {
   }
 
   private buildRegions(): HTMLElement {
+    this.panels = [];
     const regions = el("main", "regions");
     this.regionsNode = regions;
     regions.style.gridTemplateColumns = this.paged ? "minmax(0, 1fr)" : this.layout.regionColumns;
@@ -262,7 +320,12 @@ export class Console {
       const column = el("section", "region");
       column.dataset.region = region.id;
       const head = el("div", "region-head");
-      head.append(el("span", "region-index", String(index + 1).padStart(2, "0")), el("span", "", region.title));
+      head.append(el("span", "region-index", String(index + 1).padStart(2, "0")), el("span", "region-title", region.title));
+      if (region.chipFrom?.length) {
+        const chip = chipNode("—", "muted");
+        chip.dataset.regionChip = region.id;
+        head.append(chip);
+      }
       if (this.layout.focus?.[region.id]) {
         head.classList.add("is-focusable");
         head.title = `Widen ${region.title.toLowerCase()}`;
@@ -286,6 +349,7 @@ export class Console {
         if (module.detail) {
           article.classList.add("has-detail");
           article.addEventListener("click", (event) => {
+            if (this.options.root.dataset.editing === "on") return; // the layout editor owns clicks
             if (!(event.target as HTMLElement).closest("button, a")) this.openDetail(spec.id);
           });
         }
@@ -462,6 +526,33 @@ export class Console {
         })))),
       ],
     };
+  }
+
+  /** Region heads: the first chip offered by the panels the region names. */
+  private updateRegionChips(): void {
+    for (const region of this.layout.regions) {
+      const node = this.stage.querySelector<HTMLElement>(`[data-region-chip="${region.id}"]`);
+      if (!node) continue;
+      let chip: Chip | null = null;
+      for (const id of region.chipFrom ?? []) {
+        const panel = this.panels.find((p) => p.spec.id === id);
+        if (!panel || panel.error || panel.model === undefined || !panel.module.regionChip || !panel.ctx) continue;
+        chip = panel.module.regionChip(panel.model, panel.ctx);
+        if (chip) break;
+      }
+      node.textContent = chip?.label ?? "—";
+      node.dataset.tone = chip?.tone ?? "muted";
+      if (chip?.private) node.dataset.private = ""; else delete node.dataset.private;
+    }
+  }
+
+  /** The wall's refresh ring: one sweep per refresh interval. */
+  private restartRing(): void {
+    const arc = this.stage.querySelector<SVGElement>(".refresh-arc");
+    if (!arc) return;
+    arc.classList.remove("run");
+    void arc.getBoundingClientRect();
+    arc.classList.add("run");
   }
 
   private tickClock(): void {

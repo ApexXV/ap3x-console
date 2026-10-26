@@ -57,6 +57,10 @@
       "short": "OPS",
       "columns": "repeat(2, minmax(0, 1fr))",
       "rows": "1.1fr 1fr .95fr .75fr .75fr",
+      "chipFrom": [
+        "services",
+        "host"
+      ],
       "panels": [
         {
           "id": "host",
@@ -110,6 +114,9 @@
       "short": "BUSINESS",
       "columns": "repeat(6, minmax(0, 1fr))",
       "rows": ".95fr 1.05fr 1.2fr",
+      "chipFrom": [
+        "bank"
+      ],
       "panels": [
         {
           "id": "bank",
@@ -154,6 +161,9 @@
       "short": "MARKETS",
       "columns": "minmax(0, 1fr)",
       "rows": "1.32fr 1.18fr .72fr .78fr",
+      "chipFrom": [
+        "portfolio"
+      ],
       "panels": [
         {
           "id": "portfolio",

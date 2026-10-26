@@ -34,7 +34,10 @@ function tickClock(body: HTMLElement): void {
     if (date) date.textContent = now.toLocaleDateString("en-US", { timeZone: TZ, weekday: "long", month: "long", day: "numeric" }).toUpperCase();
   };
   paint();
-  if (!timers.has(body)) timers.set(body, setInterval(paint, 1_000));
+  if (!timers.has(body)) {
+    const timer = setInterval(() => { if (body.isConnected) paint(); else { clearInterval(timer); timers.delete(body); } }, 1_000);
+    timers.set(body, timer);
+  }
 }
 
 export const homeModule: ModuleManifest<HomeModel, HomeSettings> = {

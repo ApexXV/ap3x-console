@@ -66,10 +66,15 @@ If nothing needed the old wall:
 - [ ] Remove the old *AP3X Command 57* wallpaper from Lively.
 - [ ] Keep `command-57.html` served on rackmain1. It is the fallback the console's Lively shell uses.
 
+## Shared with the old wall
+
+The console and the old wall are served from the same origin, so they share this PC's browser storage:
+
+- **Receipt and review history** (`c57-biz-days`): one snapshot per day, kept for 120 days. It feeds TRACKED ON THIS WALL in the cash flow detail. History the old wall built up carries over, and both add to it while both run.
+- **Portfolio 24-hour trend** (`c57-equity`): carries over the same way.
+- **Night mode**: the shared rackmain1 schedule.
+
 ## Known differences from the old wall
 
-- **Receipt and review history:** the old wall's week-over-week history is kept in its own browser storage and starts fresh in the console. It isn't shown on the wall itself, only in detail views.
-- **Region heads:** column heads carry no summary chips. The same information is in each panel's chip.
-- **Clock:** the clock has no seconds ring; seconds show as small digits instead.
-- **Extra panels:** the console adds two panels the old wall lacks: LAB · PRINTERS & LASER and CONSOLE FEEDS.
-- **1080p screen:** the 1080p choice loads the console's `ops-1080` layout, an operations screen. It is not the old wall's single-column 1080 mode.
+- **Extra panels:** the console adds LAB · PRINTERS & LASER and CONSOLE FEEDS.
+- **Watchlist sparklines:** these start fresh. The console keeps its own quote history while it runs.

@@ -42,7 +42,7 @@
       function consoleUrl() {
         const url = page(settings.consoleUrl);
         if (!url) return null;
-        url.searchParams.set("layout", Number(settings.layout) === 1 ? "ops-1080" : "command-57");
+        url.searchParams.set("layout", Number(settings.layout) === 1 ? "command-1080" : "command-57");
         url.searchParams.set("motion", motions[Number(settings.motion)] || "full");
         url.searchParams.set("focus", focuses[Number(settings.focus)] || "balanced");
         if (Number(settings.privacy) === 1) url.searchParams.set("privacy", "on"); else url.searchParams.delete("privacy");
