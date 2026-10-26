@@ -170,6 +170,8 @@ export interface Layout {
   focus?: Record<string, string>;
   /** Other wall pages the dock can open in a side drawer (same origin paths). */
   links?: { label: string; href: string; title: string; key?: string }[];
+  /** A same-origin logo image shown before the title (hidden if it fails to load). */
+  logo?: string;
   /** A scrolling ticker along the bottom: today / tonight items first, then module items. */
   ticker?: boolean;
   /** Follow the shared 22:00–08:00 night mode (rackmain1's /shared/wall-night-mode.js) with a local toggle. */

@@ -20,6 +20,7 @@ describe("wall chrome layout fields", () => {
     bad.focus = { ops: "1fr; background: red", nowhere: "1fr 1fr 1fr" };
     bad.links = [{ label: "X", title: "X", href: "https://example.com" }, { label: "Y", title: "Y", href: "/y.html", key: "yy" }, { label: "Z", title: "Z", href: "//evil.example/z.html" }];
     bad.ticker = "yes";
+    bad.logo = "//evil.example/logo.png";
     const problems = validateLayout(bad, known);
     expect(problems.some((p) => p.startsWith("focus.ops"))).toBe(true);
     expect(problems.some((p) => p.includes("nowhere"))).toBe(true);
@@ -27,6 +28,7 @@ describe("wall chrome layout fields", () => {
     expect(problems.some((p) => p.startsWith("links[1]"))).toBe(true);
     expect(problems.some((p) => p.startsWith("links[2]"))).toBe(true);
     expect(problems.some((p) => p.startsWith("ticker"))).toBe(true);
+    expect(problems.some((p) => p.startsWith("logo"))).toBe(true);
   });
 });
 

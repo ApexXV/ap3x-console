@@ -33,6 +33,7 @@ export function validateLayout(raw: unknown, knownModules: (id: string) => boole
       if (typeof columns !== "string" || !GRID.test(columns)) problems.push(`focus.${id} must be a CSS grid template`);
     }
   }
+  if (layout.logo !== undefined && (typeof layout.logo !== "string" || !/^\/(?!\/)[\w./-]+$/.test(layout.logo))) problems.push("logo must be a same-origin path starting with /");
   if (layout.links !== undefined) {
     if (!Array.isArray(layout.links)) problems.push("links must be a list");
     else layout.links.forEach((link, i) => {

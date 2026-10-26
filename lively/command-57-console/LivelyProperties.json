@@ -1,0 +1,60 @@
+{
+  "wall": {
+    "type": "dropdown",
+    "value": 0,
+    "text": "Wall",
+    "items": [
+      "AP3X Console (falls back to the old wall if it does not load)",
+      "Old Command 57 wall"
+    ]
+  },
+  "consoleUrl": {
+    "type": "textbox",
+    "value": "http://192.168.4.115:3098/console/index.html",
+    "text": "Console URL (rackmain1)"
+  },
+  "wallUrl": {
+    "type": "textbox",
+    "value": "http://192.168.4.115:3098/command-57.html",
+    "text": "Old wall URL (rackmain1)"
+  },
+  "motion": {
+    "type": "dropdown",
+    "value": 0,
+    "text": "Motion",
+    "items": [
+      "Full",
+      "Low",
+      "Off"
+    ]
+  },
+  "focus": {
+    "type": "dropdown",
+    "value": 0,
+    "text": "Starting layout",
+    "items": [
+      "Balanced",
+      "Operations",
+      "Business",
+      "Markets"
+    ]
+  },
+  "layout": {
+    "type": "dropdown",
+    "value": 0,
+    "text": "Screen",
+    "items": [
+      "57-inch wall (7680x2160)",
+      "1080p monitor"
+    ]
+  },
+  "privacy": {
+    "type": "dropdown",
+    "value": 0,
+    "text": "Privacy (blur dollar amounts)",
+    "items": [
+      "Off",
+      "On at every start"
+    ]
+  }
+}

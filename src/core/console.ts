@@ -222,7 +222,17 @@ export class Console {
     const brand = el("div", "brand");
     const title = el("b", "brand-title", this.layout.title);
     if (this.chrome && this.layout.dock) title.append(this.chrome.toggles());
-    brand.append(title, el("span", "brand-sub", this.options.mode === "demo" ? "AP3X CONSOLE · DEMO DATA" : "AP3X CONSOLE"));
+    const sub = el("span", "brand-sub", this.options.mode === "demo" ? "AP3X CONSOLE · DEMO DATA" : "AP3X CONSOLE");
+    if (this.layout.logo) {
+      const logo = el("img", "brand-logo");
+      logo.src = this.layout.logo;
+      logo.alt = "AP3X Operations LLC";
+      logo.addEventListener("error", () => { logo.remove(); brand.classList.remove("has-logo"); });
+      const copy = el("div", "brand-copy");
+      copy.append(title, sub);
+      brand.classList.add("has-logo");
+      brand.append(logo, copy);
+    } else brand.append(title, sub);
     const priority = el("div", "priority");
     priority.id = "console-priority";
     const changes = el("button", "changes-button", "CHANGES 0");
