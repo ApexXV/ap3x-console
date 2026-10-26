@@ -1,0 +1,60 @@
+/* Panel: weather line, radar map, four facts. */
+.lo-weather { display: flex; align-items: center; gap: .5em; min-width: 0; }
+.lo-temp { font-family: var(--display); font-size: 2.2em; line-height: 1; }
+.lo-copy { display: flex; flex-direction: column; min-width: 0; }
+.lo-copy span { font-size: .7em; letter-spacing: .1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lo-copy small { color: var(--muted); font-size: .5em; letter-spacing: .1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lo-radar { position: relative; flex: 1 1 0; min-height: 0; margin: .35em 0; overflow: hidden; background: #04121a; }
+.lo-radar.is-large { height: 100%; min-height: 10em; margin: 0; }
+.lo-map { position: absolute; inset: 0; background: #04121a; }
+.lo-map .leaflet-tile-pane { filter: invert(1) hue-rotate(185deg) brightness(.78) contrast(.9) saturate(.45); }
+.lo-map .leaflet-control-attribution { background: rgba(7, 23, 34, .75); color: var(--dim); font-size: 11px; }
+.lo-map .leaflet-control-attribution a { color: var(--muted); }
+.lo-empty { position: absolute; inset: 0; display: grid; place-items: center; padding: 0 1em; text-align: center; color: var(--dim); font-size: .5em; letter-spacing: .2em; z-index: 700; }
+.lo-empty[hidden] { display: none; }
+.lo-label { position: absolute; left: .4em; top: .3em; z-index: 700; padding: .1em .4em; background: rgba(4, 18, 26, .8); color: var(--ap3x-cyan); font-family: var(--mono); font-size: .45em; letter-spacing: .12em; }
+.lo-facts .tile-row { gap: .3em; }
+.lo-days { flex: none; height: auto; min-height: 5em; grid-auto-columns: minmax(0, 1fr); }
+.lo-days .wx-day { padding: .4em .3em; }
+
+/* Aircraft markers (Leaflet divIcons, sized in px). */
+.ac-plane-icon { background: none; border: 0; }
+.ac-plane { --c: #38bdca; position: relative; display: block; width: 32px; height: 32px; color: var(--c); filter: drop-shadow(0 0 3px #000); cursor: pointer; }
+.ac-plane i { position: absolute; inset: 2px; background: currentColor; clip-path: polygon(50% 0, 61% 37%, 100% 50%, 100% 63%, 61% 56%, 58% 87%, 72% 96%, 72% 100%, 50% 94%, 28% 100%, 28% 96%, 42% 87%, 39% 56%, 0 63%, 0 50%, 39% 37%); }
+.ac-plane b { position: absolute; left: 38px; top: 50%; transform: translateY(-50%); padding: 2px 8px; border-left: 2px solid currentColor; background: rgba(4, 18, 26, .88); font: 700 18px/1.2 var(--mono); letter-spacing: .04em; white-space: nowrap; }
+.ac-plane.is-low { --c: #f2b54f; } .ac-plane.is-mid { --c: #5fe0a6; } .ac-plane.is-high { --c: #38bdca; }
+.ac-plane.is-upper { --c: #b98cff; } .ac-plane.is-ground, .ac-plane.is-unknown { --c: #93acb9; }
+.ac-plane.is-emergency { --c: #ff6b72; } .ac-plane.is-military i { outline: 2px solid currentColor; outline-offset: 3px; }
+.ac-plane.is-stale { opacity: .45; }
+.ac-plane.is-selected { --c: #ffffff; }
+.ac-plane.is-selected i { filter: drop-shadow(0 0 6px var(--ap3x-cyan)); }
+
+/* Flight card over the detail map, and the aircraft list. */
+.flight-card { position: absolute; z-index: 800; left: .67em; top: .67em; width: 21em; max-height: calc(100% - 1.33em); overflow: hidden;
+  display: flex; flex-direction: column; gap: .45em; padding: .67em .73em; background: rgba(7, 23, 34, .95); border: 2px solid var(--ap3x-cyan); box-shadow: 0 .67em 2em rgba(0, 0, 0, .6); }
+.flight-card header { display: flex; align-items: center; gap: .33em; }
+.flight-card header div { flex: 1; min-width: 0; }
+.flight-card header b { display: block; font-family: var(--display); font-size: 1.33em; letter-spacing: .04em; }
+.flight-card header span { color: var(--muted); font-size: .53em; letter-spacing: .14em; }
+.flight-card header small { color: var(--dim); font-family: var(--mono); font-size: .6em; margin-right: .2em; }
+.fc-btn { min-width: 1.5em; font-size: .7em; }
+.fc-photo { width: 100%; max-height: 7.3em; object-fit: cover; background: #04121a; }
+.fc-facts { display: grid; gap: .27em; margin: 0; }
+.fc-facts div { display: grid; grid-template-columns: 7em minmax(0, 1fr); gap: .4em; align-items: baseline; }
+.fc-facts dt { color: var(--dim); font-size: .53em; letter-spacing: .16em; }
+.fc-facts dd { margin: 0; font-size: .73em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fc-live { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .27em; }
+.fc-live div { padding: .27em .33em; background: rgba(16, 41, 54, .8); border-top: 2px solid var(--ap3x-teal); min-width: 0; }
+.fc-live span { display: block; color: var(--dim); font-size: .47em; letter-spacing: .14em; }
+.fc-live b { display: block; margin-top: .07em; font-size: .63em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.flight-card footer { color: var(--dim); font-size: .47em; letter-spacing: .06em; }
+.fc-list { display: grid; gap: .27em; }
+.fc-list li { display: grid; grid-template-columns: .27em minmax(0, 1fr) 3em 3.3em 3.7em; gap: .47em; align-items: center; padding: .33em .47em; background: rgba(16, 41, 54, .6); cursor: pointer; font-size: .73em; transition: background .2s; }
+.fc-list li::before { content: ""; align-self: stretch; background: var(--tone, var(--ap3x-cyan)); }
+.fc-list li:hover { background: rgba(8, 126, 145, .4); }
+.fc-list li.is-selected { background: rgba(56, 189, 202, .25); outline: 2px solid var(--ap3x-cyan); }
+.fc-list li div { min-width: 0; }
+.fc-list li b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fc-list li small { display: block; color: var(--muted); font-size: .7em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fc-list li span { font-family: var(--mono); font-size: .85em; color: var(--muted); text-align: right; }
+.fc-list li em { font-style: normal; font-family: var(--mono); font-size: .85em; color: var(--tone, var(--ap3x-cyan)); text-align: right; }

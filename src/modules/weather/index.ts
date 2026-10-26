@@ -9,7 +9,7 @@ import "./weather.css";
 
 const deg = (v: number | null) => (v === null ? "—" : `${Math.round(v)}°`);
 
-function dayCard(d: Day): HTMLElement {
+export function dayCard(d: Day): HTMLElement {
   const card = el("div", "wx-day");
   const temps = el("b", "", d.high === null ? deg(d.low) : deg(d.high));
   if (d.high !== null && d.low !== null) temps.append(el("small", "", deg(d.low)));
