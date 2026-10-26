@@ -230,3 +230,36 @@ describe("business contracts", () => {
     expect(body.querySelector(".kpi-value")!.textContent).toBe("—");
   });
 });
+
+describe("markets contracts", () => {
+  it("portfolio total is withheld unless all four accounts reconcile; control changes are logged", () => {
+    const portfolio = getModule("portfolio")!;
+    const demo = portfolio.demo!(NOW) as Record<string, any>;
+    expect(portfolio.model(context(portfolio, demo)).equity).toBeGreaterThan(0);
+    const broken = structuredClone(demo);
+    broken.finance.all_accounts_total += 5;
+    const m = portfolio.model(context(portfolio, broken));
+    expect(m.equity).toBeNull();
+    const body = document.createElement("div");
+    portfolio.render(body, m, context(portfolio, broken));
+    expect(body.querySelector(".kpi-value")!.textContent).toBe("WITHHELD");
+
+    const control = getModule("control")!;
+    const before = control.model(context(control, control.demo!(NOW)));
+    const after = structuredClone(before);
+    after.tiles[0][1] = "DOWN";
+    expect(control.changes!(before, after)).toEqual([{ tone: "bad", kicker: "CONTROL", text: "QUICKSILVER is DOWN" }]);
+    expect(control.changes!(after, before)).toEqual([{ tone: "good", kicker: "CONTROL", text: "QUICKSILVER is back (RUNNING)" }]);
+  });
+
+  it("sentinel score only counts in a live, open session", () => {
+    const sentinel = getModule("sentinel")!;
+    const demo = sentinel.demo!(NOW) as Record<string, any>;
+    const now = sentinel.model(context(sentinel, demo));
+    expect(now.score).toBe(82);
+    const closed = structuredClone(demo);
+    closed.sentinel.session = "closed";
+    closed.sentinel.health.active_trading_session = false;
+    expect(sentinel.model(context(sentinel, closed)).score).toBeNull();
+  });
+});

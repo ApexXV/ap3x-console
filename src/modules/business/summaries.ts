@@ -11,9 +11,9 @@ export type SourceState = "live" | "stale" | "partial" | "unknown";
 const MINUTE = 60_000;
 const DAY = 24 * 60 * MINUTE;
 const REVIEW_KEYS = ["missing_receipts", "incomplete_mileage", "classification_gaps", "assets_awaiting_review", "app_workflow_exceptions"];
-const record = (value: unknown): value is Record<string, Json> => value !== null && typeof value === "object" && !Array.isArray(value);
-const count = (value: unknown): value is number => Number.isSafeInteger(value) && (value as number) >= 0 && (value as number) < 1e9;
-const finite = (value: unknown): number | null => (typeof value === "number" && Number.isFinite(value) ? value : null);
+export const record = (value: unknown): value is Record<string, Json> => value !== null && typeof value === "object" && !Array.isArray(value);
+export const count = (value: unknown): value is number => Number.isSafeInteger(value) && (value as number) >= 0 && (value as number) < 1e9;
+export const finite = (value: unknown): number | null => (typeof value === "number" && Number.isFinite(value) ? value : null);
 const amount = (value: unknown): value is number => finite(value) !== null && (value as number) >= 0 && (value as number) < 1e9 &&
   Math.abs((value as number) * 100 - Math.round((value as number) * 100)) < 0.0001;
 const cents = (value: unknown): number | null => (amount(value) ? Math.round(value * 100) : null);
@@ -32,7 +32,7 @@ function day(value: unknown): string | null {
   return Number.isFinite(parsed) && new Date(parsed).toISOString().slice(0, 10) === value ? value : null;
 }
 
-function freshness(stamp: unknown, maxAgeMs: number, nowMs: number): "live" | "stale" | "unknown" {
+export function freshness(stamp: unknown, maxAgeMs: number, nowMs: number): "live" | "stale" | "unknown" {
   const then = timestamp(stamp);
   if (then === null || then > nowMs + 5 * MINUTE) return "unknown";
   return nowMs - then > maxAgeMs ? "stale" : "live";

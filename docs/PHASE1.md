@@ -21,7 +21,7 @@ Each becomes a module with its existing contract, demo data, detail view, change
 - [x] Threat and ops feed
 - [x] FM operations (ClickUp): counts, deadlines, Lists with drill-in, mentions and comms
 - [x] Business: bank, receipts, review queue, cash flow, books health, obligations, latest receipt. The strict feed validators are a TypeScript port of `ucs-layout-v2-data.js`, checked by the wall's own tests (`test/business-summaries.test.ts`). Not ported yet: the weekly receipt / review history the wall keeps in its browser storage
-- [ ] Finance and markets: portfolio, watchlist, market sentinel, control and external
+- [x] Finance and markets: portfolio (equity withheld unless all four accounts reconcile; 24 h trend kept in the browser), watchlist, Market Sentinel with Codex capacity, control & external. `summarizeFinance` / `summarizeMarkets` are ported and checked by the wall's tests (`test/markets-summaries.test.ts`)
 - [ ] Console chrome: ticker (today/tonight strip), night mode, privacy toggle button, motion setting, music tile
 
 ## Lab touch screen (LabTouch1)

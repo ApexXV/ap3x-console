@@ -15,6 +15,12 @@ const state = new WeakMap<HTMLElement, { timer: ReturnType<typeof setInterval>; 
 const lastFrame = new Map<string, { good: number; failed: boolean }>();
 const RETAIN_MS = 45_000;
 
+/** "ONLINE" when a frame from this URL loaded within the last 45 s, "WAIT" otherwise (for status tiles). */
+export function cameraState(url: string, now = Date.now()): "ONLINE" | "WAIT" {
+  const last = lastFrame.get(url);
+  return last && !last.failed && now - last.good <= RETAIN_MS ? "ONLINE" : "WAIT";
+}
+
 function attach(body: HTMLElement, m: CameraModel, chipHost: () => HTMLElement | null): void {
   const existing = state.get(body);
   if (existing && existing.url === m.url) return;

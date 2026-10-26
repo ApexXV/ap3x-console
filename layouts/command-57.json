@@ -112,35 +112,19 @@
       "panels": [
         {
           "id": "portfolio",
-          "module": "placeholder",
-          "title": "PORTFOLIO",
-          "settings": {
-            "name": "Portfolio"
-          }
+          "module": "portfolio"
         },
         {
           "id": "quotes",
-          "module": "placeholder",
-          "title": "WATCHLIST",
-          "settings": {
-            "name": "Watchlist"
-          }
+          "module": "watchlist"
         },
         {
           "id": "sentinel",
-          "module": "placeholder",
-          "title": "MARKET SENTINEL",
-          "settings": {
-            "name": "Market sentinel"
-          }
+          "module": "sentinel"
         },
         {
           "id": "control",
-          "module": "placeholder",
-          "title": "CONTROL & EXTERNAL",
-          "settings": {
-            "name": "Control & external"
-          }
+          "module": "control"
         }
       ]
     }
