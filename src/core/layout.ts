@@ -71,6 +71,10 @@ export function validateLayout(raw: unknown, knownModules: (id: string) => boole
         problems.push(`${at}.settings must be an object`);
       }
     });
+    if (region.chipFrom !== undefined) {
+      const own = new Set(region.panels.map((p) => p?.id));
+      if (!Array.isArray(region.chipFrom) || region.chipFrom.some((id) => typeof id !== "string" || !own.has(id))) problems.push(`${where}.chipFrom must list panel ids in this region`);
+    }
   });
   return problems;
 }

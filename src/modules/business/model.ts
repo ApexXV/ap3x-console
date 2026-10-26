@@ -82,7 +82,7 @@ export function businessModel(ctx: ModuleContext): BusinessModel {
   const summary = summarizeBusiness({ business: data("business-record"), ledger: data("ledger"), ledgerActivity: data("ledger-activity"), bank: data("bank") }, ctx.now);
   const activity = asDict(data("ledger-activity"));
   const latest = asDict(activity.latest);
-  return {
+  const model: BusinessModel = {
     ...summary,
     mode: ctx.mode,
     now: ctx.now,
@@ -94,6 +94,8 @@ export function businessModel(ctx: ModuleContext): BusinessModel {
       latestDate: text(latest.received_on), latestStatus: text(latest.deposit_status)?.toUpperCase() ?? null,
     } : null,
   };
+  recordBusinessDay(model); // every refresh, not only when the detail is open
+  return model;
 }
 
 /** Monday-based week key for a YYYY-MM-DD date. */
@@ -102,6 +104,86 @@ export function weekStart(date: string): string {
   const weekday = (new Date(t).getUTCDay() + 6) % 7;
   return new Date(t - weekday * 86_400_000).toISOString().slice(0, 10);
 }
+
+/* ---------------- tracked days: one snapshot per day, shared with the old wall ---------------- */
+
+/* Same key and shape as Command 57's wall, which is served from the same origin, so the history
+ * the wall built up carries over (and both keep adding to it while both run). */
+export const BIZ_DAYS_KEY = "c57-biz-days";
+export interface DaySnapshot { gross: number | null; receipts: number | null; review: number | null; open: number | null }
+export interface TrackedWeek { start: string; grossAdded: number | null; receiptsAdded: number | null; reviewEnd: number | null; openEnd: number | null; days: number; partialStart: boolean }
+
+let bizDays: Record<string, DaySnapshot> | null = null;
+let bizMode: RunMode | null = null;
+
+function storageOf(): Storage | null {
+  try { return window.localStorage; } catch { return null; }
+}
+
+function loadDays(storage: Storage | null): Record<string, DaySnapshot> {
+  try {
+    const saved = asDict(JSON.parse(storage?.getItem(BIZ_DAYS_KEY) ?? "{}"));
+    return Object.fromEntries(Object.entries(saved).filter(([date, v]) => /^\d{4}-\d{2}-\d{2}$/.test(date) && record(v)).map(([date, v]) => {
+      const d = v as Record<string, unknown>;
+      return [date, { gross: num(d.gross), receipts: num(d.receipts), review: num(d.review), open: num(d.open) }];
+    }));
+  } catch { return {}; }
+}
+
+/** Record today's numbers (live) or a made-up 8-week history (demo); returns every tracked day. */
+export function recordBusinessDay(m: BusinessModel, storage: Storage | null = storageOf()): Record<string, DaySnapshot> {
+  if (bizDays === null || bizMode !== m.mode) { bizDays = m.mode === "demo" ? {} : loadDays(storage); bizMode = m.mode; }
+  if (m.mode === "demo") {
+    if (Object.keys(bizDays).length) return bizDays;
+    const today = Date.parse(`${todayEastern(m.now)}T12:00:00Z`);
+    for (let i = 55; i >= 0; i -= 1) {
+      const date = new Date(today - i * 86_400_000).toISOString().slice(0, 10);
+      bizDays[date] = { gross: 12_000 + (55 - i) * 118, receipts: 25 + Math.floor((55 - i) / 4.6), review: 4 + ((i * 7) % 9), open: 5 + (i % 3) };
+    }
+    return bizDays;
+  }
+  const ok = (state: string) => state === "live" || state === "stale";
+  const snapshot: DaySnapshot = {
+    gross: ok(m.receipts.state) ? m.receipts.grossReceived : null,
+    receipts: ok(m.receipts.state) ? m.receipts.receiptCount : null,
+    review: ok(m.review.state) ? m.review.totalOpen : null,
+    open: m.current.state === "live" ? m.obligations.length : null,
+  };
+  if (Object.values(snapshot).every((v) => v === null)) return bizDays;
+  const today = todayEastern(m.now);
+  if (JSON.stringify(bizDays[today]) === JSON.stringify(snapshot)) return bizDays;
+  bizDays = { ...loadDays(storage), [today]: snapshot }; // re-read first: the old wall may have written meanwhile
+  const keep = Object.keys(bizDays).sort().slice(-120);
+  bizDays = Object.fromEntries(keep.map((k) => [k, bizDays![k]!]));
+  try { storage?.setItem(BIZ_DAYS_KEY, JSON.stringify(bizDays)); } catch { /* optional */ }
+  return bizDays;
+}
+
+/** Per-week deltas from the daily snapshots: receipts added, review queue and open obligations at week end. */
+export function trackedWeeks(days: Record<string, DaySnapshot>): TrackedWeek[] {
+  const byWeek = new Map<string, [string, DaySnapshot][]>();
+  for (const date of Object.keys(days).sort()) {
+    const key = weekStart(date);
+    byWeek.set(key, [...(byWeek.get(key) ?? []), [date, days[date]!]]);
+  }
+  let previousEnd: DaySnapshot | null = null;
+  const weeks: TrackedWeek[] = [];
+  for (const [start, list] of [...byWeek].sort(([x], [y]) => x.localeCompare(y))) {
+    const end = list[list.length - 1]![1];
+    const base: DaySnapshot = previousEnd ?? list[0]![1];
+    weeks.push({
+      start,
+      grossAdded: end.gross !== null && base.gross !== null ? end.gross - base.gross : null,
+      receiptsAdded: end.receipts !== null && base.receipts !== null ? end.receipts - base.receipts : null,
+      reviewEnd: end.review, openEnd: end.open, days: list.length, partialStart: previousEnd === null,
+    });
+    previousEnd = end;
+  }
+  return weeks;
+}
+
+/** Tests only: forget the in-memory history. */
+export function resetTrackedDays(): void { bizDays = null; bizMode = null; }
 
 export function weeksFromDaily(daily: Day[]): Week[] {
   const weeks = new Map<string, Week>();

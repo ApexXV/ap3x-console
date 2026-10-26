@@ -110,3 +110,46 @@ describe("music playlist", () => {
     expect(tracks.map((t) => t.title)).toEqual(["late night"]);
   });
 });
+
+describe("tracked business days (shared with the old wall)", () => {
+  it("reads the wall's c57-biz-days, adds today, and builds weekly deltas", async () => {
+    const { recordBusinessDay, resetTrackedDays, trackedWeeks, BIZ_DAYS_KEY } = await import("../src/modules/business/model");
+    const store = new Map<string, string>();
+    const storage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v) } as Storage;
+    store.set(BIZ_DAYS_KEY, JSON.stringify({ "2026-10-19": { gross: 1000, receipts: 10, review: 5, open: 3 }, "2026-10-21": { gross: 1500, receipts: 12, review: 4, open: 3 }, junk: 1 }));
+    resetTrackedDays();
+    const m = {
+      mode: "live", now: Date.parse("2026-10-26T16:00:00Z"),
+      receipts: { state: "live", grossReceived: 2100, receiptCount: 15 }, review: { state: "live", totalOpen: 2 },
+      current: { state: "live" }, obligations: [{}, {}],
+    } as unknown as Parameters<typeof recordBusinessDay>[0];
+    const days = recordBusinessDay(m, storage);
+    expect(Object.keys(days)).toEqual(["2026-10-19", "2026-10-21", "2026-10-26"]);
+    expect(JSON.parse(store.get(BIZ_DAYS_KEY)!)["2026-10-26"]).toEqual({ gross: 2100, receipts: 15, review: 2, open: 2 });
+    const weeks = trackedWeeks(days);
+    expect(weeks.map((w) => [w.start, w.grossAdded, w.receiptsAdded, w.reviewEnd, w.partialStart])).toEqual([
+      ["2026-10-19", 500, 2, 4, true], ["2026-10-26", 600, 3, 2, false],
+    ]);
+    resetTrackedDays();
+  });
+});
+
+describe("region head chips", () => {
+  beforeEach(() => { document.body.innerHTML = '<div id="app"></div>'; });
+
+  it("shows the first chip a named panel offers", async () => {
+    const root = document.getElementById("app")!;
+    const l = layout();
+    l.regions[0]!.chipFrom = ["services", "host"];
+    l.regions[1]!.chipFrom = ["bank"];
+    l.regions[2]!.chipFrom = ["portfolio"];
+    const console_ = new Console({ layout: l, root, mode: "demo", storage: null }).mount();
+    await console_.refresh();
+    const chip = (id: string) => root.querySelector<HTMLElement>(`[data-region-chip="${id}"]`)!;
+    expect(chip("ops").textContent).toBe("1 SERVICE DOWN");
+    expect(chip("business").textContent).toBe("DEMO DATA");
+    expect(chip("markets").textContent).toMatch(/^\$[\d.]+K$/);
+    expect(chip("markets").dataset.private).toBe("");
+    expect(validateLayout({ ...l, regions: [{ ...l.regions[0]!, chipFrom: ["portfolio"] }, ...l.regions.slice(1)] }, known).some((p) => p.includes("chipFrom"))).toBe(true);
+  });
+});

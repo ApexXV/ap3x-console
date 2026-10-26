@@ -174,6 +174,15 @@ export function money(value: number | null | undefined, digits = 2): string {
   return value.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
+/** "$84.2K", "$1.25M", "$950" (the wall's column-head amounts). */
+export function compactMoney(value: number | null | undefined): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  const abs = Math.abs(value), sign = value < 0 ? "−" : "";
+  if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(2)}M`;
+  if (abs >= 1e4) return `${sign}$${(abs / 1e3).toFixed(1)}K`;
+  return `${sign}${money(abs, 0)}`;
+}
+
 /** "+$12.00", "−$3", "$0.00". */
 export const signedMoney = (value: number | null | undefined, digits = 2): string =>
   value === null || value === undefined || !Number.isFinite(value) ? "—" : `${value > 0 ? "+" : value < 0 ? "−" : ""}${money(Math.abs(value), digits)}`;

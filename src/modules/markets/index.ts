@@ -1,6 +1,6 @@
 import { bar, el, setTone, svgEl } from "../../core/dom";
 import { dlist, linkButton, note, place, sec, stats, table, type Cell } from "../../core/detail";
-import { ageLabel, clockOf, money, signedMoney, signedPct, sinceMs, toneFor, TZ } from "../../core/format";
+import { ageLabel, clockOf, compactMoney, money, signedMoney, signedPct, sinceMs, toneFor, TZ } from "../../core/format";
 import type { Chip, ModuleManifest, Tone } from "../../core/types";
 import { cameraState } from "../camera";
 import {
@@ -15,14 +15,6 @@ import "./markets.css";
 
 const priv = <T extends HTMLElement>(node: T): T => { node.dataset.private = ""; return node; };
 
-function compactMoney(value: number | null): string {
-  if (value === null || !Number.isFinite(value)) return "—";
-  const abs = Math.abs(value);
-  if (abs >= 1e6) return `${value < 0 ? "−" : ""}$${(abs / 1e6).toFixed(2)}M`;
-  if (abs >= 1e4) return `${value < 0 ? "−" : ""}$${(abs / 1e3).toFixed(1)}K`;
-  return `${value < 0 ? "−" : ""}$${abs.toFixed(0)}`;
-}
-
 const landingDay = (stamp: string | null) => {
   const parsed = Date.parse(stamp ?? "");
   return Number.isFinite(parsed) ? new Intl.DateTimeFormat("en-US", { timeZone: TZ, month: "short", day: "numeric" }).format(parsed).toUpperCase() : "—";
@@ -30,7 +22,7 @@ const landingDay = (stamp: string | null) => {
 
 /* ---------------- equity history: kept in this browser for 24 h, like the wall ---------------- */
 
-const EQUITY_KEY = "console-equity-history";
+const EQUITY_KEY = "c57-equity"; // shared with the old wall (same origin, same [time, value] shape)
 let equity: [number, number][] | null = null;
 
 function equityHistory(f: FinanceModel): [number, number][] {
@@ -151,6 +143,7 @@ export const portfolioModule: ModuleManifest<FinanceModel> = {
     body.replaceChildren(priv(el("div", "kpi-value", complete ? money(f.equity, 0) : "WITHHELD")), day, stack, legend, facts);
   },
 
+  regionChip: (f) => (f.equity !== null ? { label: compactMoney(f.equity), tone: "good", private: true } : { label: "PARTIAL", tone: "warn" }),
   chip: financeChip,
 
   detail(f) {

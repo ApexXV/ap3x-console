@@ -4,7 +4,7 @@ import { ageLabel, clockOf, dueLabel, dueTone, money, signedMoney, sinceMs } fro
 import { tonightLabel } from "../../core/ticker";
 import type { Chip, ModuleManifest, Tone } from "../../core/types";
 import { cashflowChart, donut, obligationTimeline, weekBars } from "./charts";
-import { BUSINESS_SOURCES, type BusinessModel, businessModel, demoBusiness, REVIEW_ROWS, visible, weeksFromDaily } from "./model";
+import { BUSINESS_SOURCES, type BusinessModel, businessModel, demoBusiness, recordBusinessDay, REVIEW_ROWS, trackedWeeks, visible, weeksFromDaily } from "./model";
 import "./business.css";
 
 /* Command 57's business column: bank cash flow, receipts, the ledger review queue, the daily cash
@@ -59,6 +59,9 @@ export const bankModule: Manifest = {
     ? [{ label: "BANK 30D", value: `${signedMoney(m.bank.postedNet, 0)} net · ${money(m.bank.postedIn, 0)} in · ${money(m.bank.postedOut, 0)} out`, private: true, order: 10 }]
     : []),
 
+  regionChip: (m) => (m.mode === "demo" ? { label: "DEMO DATA", tone: "info" }
+    : m.state === "unknown" ? { label: "SOURCES UNAVAILABLE", tone: "bad" }
+    : { label: `SOURCES ${m.state.toUpperCase()}`, tone: m.state === "live" ? "good" : "warn" }),
   chip: (m) => (visible(m.bank.state) ? stateChip(m.bank.state) : { label: m.bank.connected === false ? "DISCONNECTED" : "UNAVAILABLE", tone: "muted" }),
 
   detail(m) {
@@ -281,24 +284,35 @@ export const cashflowModule: Manifest = {
     const full = weeks.filter((w) => w.days === 7);
     const avg = full.length ? full.reduce((s, w) => s + w.net, 0) / full.length : null;
     const max = Math.max(1, ...weeks.map((x) => Math.abs(x.net)));
+    const days = recordBusinessDay(m);
+    const tracked = trackedWeeks(days);
+    const thisTracked = tracked[tracked.length - 1];
+    const since = Object.keys(days).sort()[0];
     return {
       title: "WEEKLY BUSINESS TREND",
       chip: ok ? { label: `${weeks.length} WEEKS`, tone: "info" } : { label: "BANK UNAVAILABLE", tone: "muted" },
-      foot: "Bank weeks run Monday–Sunday from the 30-day bank feed · partial weeks at either end are marked with their day count",
-      columns: "minmax(0, 1.2fr) minmax(0, 1fr)", rows: "auto minmax(0, 1fr)",
+      foot: `Bank weeks run Monday–Sunday from the 30-day bank feed · receipt and review trends are tracked on this PC${since ? ` since ${since}` : ""}`,
+      columns: "minmax(0, 1.2fr) minmax(0, 1fr)", rows: "auto minmax(0, 1fr) minmax(0, 1fr)",
       sections: [
         place(priv(stats([
           ["THIS WEEK NET", current ? signedMoney(current.net, 0) : null, current ? (current.net < 0 ? "bad" : "good") : "muted", current ? `${current.days} day${current.days === 1 ? "" : "s"} so far` : null],
           ["LAST WEEK NET", prior ? signedMoney(prior.net, 0) : null, prior ? (prior.net < 0 ? "bad" : "good") : "muted"],
           ["WEEK OVER WEEK", current && prior ? signedMoney(current.net - prior.net, 0) : null, current && prior ? (current.net >= prior.net ? "good" : "warn") : "muted", "this week vs last"],
           ["AVG FULL WEEK", avg === null ? null : signedMoney(avg, 0), null, `${full.length} full week${full.length === 1 ? "" : "s"}`],
+          ["RECEIVED THIS WEEK", thisTracked?.grossAdded != null ? money(thisTracked.grossAdded, 0) : null, "info", thisTracked?.receiptsAdded ? `${thisTracked.receiptsAdded} receipt${thisTracked.receiptsAdded === 1 ? "" : "s"}` : "tracked on this PC"],
+          ["REVIEW QUEUE", thisTracked?.reviewEnd ?? null, thisTracked?.reviewEnd ? "warn" : "good", "open now"],
         ])), "1 / -1"),
-        sec("BANK BY WEEK", weeks.length ? table(["WEEK OF", "IN", "OUT", "NET", "", "TXNS", "VS PRIOR"], weeks.slice().reverse().map((w, i, list) => {
+        place(sec("BANK BY WEEK", weeks.length ? table(["WEEK OF", "IN", "OUT", "NET", "", "TXNS", "VS PRIOR"], weeks.slice().reverse().map((w, i, list) => {
           const before = list[i + 1];
           return [`${w.start}${w.days < 7 ? ` · ${w.days}D` : ""}`, [money(w.moneyIn, 0), "good"], [money(w.moneyOut, 0), "bad"], [signedMoney(w.net, 0), w.net < 0 ? "bad" : "good"],
             bar(Math.abs(w.net) / max, w.net < 0 ? "bad" : "good"), w.count, before ? [signedMoney(w.net - before.net, 0), w.net >= before.net ? "good" : "warn"] : "—"];
-        }), [1, 2, 3, 5, 6], [1, 2, 3, 6]) : note("Bank activity unavailable.")),
+        }), [1, 2, 3, 5, 6], [1, 2, 3, 6]) : note("Bank activity unavailable.")), "1", "2 / span 2"),
         sec("DAILY IN / OUT · RUNNING NET", cashflowChart(ok ? m.daily : [])),
+        priv(sec("TRACKED ON THIS WALL", tracked.length ? table(["WEEK OF", "RECEIVED", "RECEIPTS", "REVIEW AT END", "OPEN OBLIGATIONS"], tracked.slice(-8).reverse().map((w) => [
+          `${w.start}${w.partialStart ? " · FIRST" : ""}`, w.grossAdded === null ? "—" : money(w.grossAdded, 0), w.receiptsAdded ?? "—",
+          [w.reviewEnd ?? "—", w.reviewEnd ? "warn" : "good"], w.openEnd ?? "—",
+        ]), [1, 2, 3, 4]) : note("Weekly receipt and review history builds up from today. Each day's numbers are saved on this PC for 120 days."),
+        note("Received and receipts count what was added during each week; the first tracked week counts from its first day on the wall."))),
       ],
     };
   },

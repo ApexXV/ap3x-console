@@ -59,6 +59,10 @@ export const servicesModule: ModuleManifest<ServicesModel, { services: [string, 
     body.replaceChildren(grid);
   },
 
+  regionChip(m) {
+    const down = m.services.filter((s) => s.online === false).length;
+    return down ? { label: `${down} SERVICE${down === 1 ? "" : "S"} DOWN`, tone: "warn" } : null;
+  },
   chip: (m) => (!m.known ? { label: "UNKNOWN", tone: "muted" } : { label: `${m.online}/${m.known} ONLINE`, tone: m.services.every((s) => s.online !== false) ? "good" : "warn" }),
 
   detail(m) {

@@ -1,13 +1,13 @@
 import { ChangeLog, type LoggedChange } from "./changes";
 import { Chrome } from "./chrome";
-import { el, chipNode, setTone } from "./dom";
+import { el, chipNode, setTone, svgEl } from "./dom";
 import { dlist, note, sec, stats } from "./detail";
 import { ageLabel, clockFormat, clockOf, dayOf, setClockFormat, TZ } from "./format";
 import { MusicTile } from "./music";
 import { getModule } from "./registry";
 import { SourceHub } from "./sources";
 import { renderTicker, tickerElement } from "./ticker";
-import type { AnyModule, ChangeEvent, DetailView, Layout, LayoutPanel, ModuleContext, Priority, RunMode, SourceState, Tone, TickerItem } from "./types";
+import type { AnyModule, ChangeEvent, Chip, DetailView, Layout, LayoutPanel, ModuleContext, Priority, RunMode, SourceState, Tone, TickerItem } from "./types";
 
 interface PanelInstance {
   spec: LayoutPanel;
@@ -158,6 +158,7 @@ export class Console {
         panel.module.render(panel.body, model, ctx);
         const chip = panel.module.chip?.(model);
         panel.chip.replaceWith(panel.chip = chip ? chipNode(chip.label, chip.tone) : chipNode("—", "muted"));
+        if (chip?.private) panel.chip.dataset.private = "";
         const priority = panel.module.priority?.(model);
         if (priority) priorities.push(priority);
         if (this.tickerNode && panel.module.ticker) ticker.push(...panel.module.ticker(model, ctx));
@@ -173,11 +174,13 @@ export class Console {
         console.error(`[console] ${panel.spec.id} (${panel.module.id})`, error);
       }
     }
+    this.updateRegionChips();
     this.showPriority(priorities.sort((a, b) => b.rank - a.rank)[0] ?? BASELINE);
     this.logChanges(events, now);
     if (this.tickerNode) {
       renderTicker(this.tickerNode, ticker, `${this.options.mode === "demo" ? "DEMO" : `REFRESH ${this.layout.refreshSeconds ?? 30}S`} · ${clockOf(new Date(now).toISOString())} · AP3XOPERATIONS.COM`);
     }
+    this.restartRing();
     if (this.detailId) this.buildDetail();
   }
 
@@ -245,8 +248,14 @@ export class Console {
       bar.classList.add("has-dock");
       const time = el("div", "clock-time");
       const date = el("div", "clock-date");
-      clock.append(time, date);
-      if (this.layout.nightMode) clock.append(this.chrome.clockMode());
+      const ring = svgEl("svg", { class: "refresh-ring", viewBox: "0 0 44 44", "aria-hidden": "true" });
+      ring.append(svgEl("circle", { cx: "22", cy: "22", r: "19" }), svgEl("circle", { class: "refresh-arc", cx: "22", cy: "22", r: "19", pathLength: "100" }));
+      ring.style.setProperty("--refresh", `${this.layout.refreshSeconds ?? 30}s`);
+      const lines = el("div", "clock-lines");
+      lines.append(time, date);
+      if (this.layout.nightMode) lines.append(this.chrome.clockMode());
+      clock.classList.add("has-ring");
+      clock.append(ring, lines);
       bar.append(brand, priority, this.chrome.dock(changes), clock);
     } else {
       bar.append(brand, priority, changes, clock);
@@ -262,7 +271,12 @@ export class Console {
       const column = el("section", "region");
       column.dataset.region = region.id;
       const head = el("div", "region-head");
-      head.append(el("span", "region-index", String(index + 1).padStart(2, "0")), el("span", "", region.title));
+      head.append(el("span", "region-index", String(index + 1).padStart(2, "0")), el("span", "region-title", region.title));
+      if (region.chipFrom?.length) {
+        const chip = chipNode("—", "muted");
+        chip.dataset.regionChip = region.id;
+        head.append(chip);
+      }
       if (this.layout.focus?.[region.id]) {
         head.classList.add("is-focusable");
         head.title = `Widen ${region.title.toLowerCase()}`;
@@ -462,6 +476,33 @@ export class Console {
         })))),
       ],
     };
+  }
+
+  /** Region heads: the first chip offered by the panels the region names. */
+  private updateRegionChips(): void {
+    for (const region of this.layout.regions) {
+      const node = this.stage.querySelector<HTMLElement>(`[data-region-chip="${region.id}"]`);
+      if (!node) continue;
+      let chip: Chip | null = null;
+      for (const id of region.chipFrom ?? []) {
+        const panel = this.panels.find((p) => p.spec.id === id);
+        if (!panel || panel.error || panel.model === undefined || !panel.module.regionChip || !panel.ctx) continue;
+        chip = panel.module.regionChip(panel.model, panel.ctx);
+        if (chip) break;
+      }
+      node.textContent = chip?.label ?? "—";
+      node.dataset.tone = chip?.tone ?? "muted";
+      if (chip?.private) node.dataset.private = ""; else delete node.dataset.private;
+    }
+  }
+
+  /** The wall's refresh ring: one sweep per refresh interval. */
+  private restartRing(): void {
+    const arc = this.stage.querySelector<SVGElement>(".refresh-arc");
+    if (!arc) return;
+    arc.classList.remove("run");
+    void arc.getBoundingClientRect();
+    arc.classList.add("run");
   }
 
   private tickClock(): void {
