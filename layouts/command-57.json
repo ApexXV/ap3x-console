@@ -34,11 +34,8 @@
         },
         {
           "id": "local",
-          "module": "placeholder",
-          "title": "LOCAL WEATHER & RADAR",
-          "settings": {
-            "name": "Local weather & radar"
-          }
+          "module": "local",
+          "title": "LOCAL \u00b7 WEATHER & RADAR"
         },
         {
           "id": "media",

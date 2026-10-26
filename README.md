@@ -20,3 +20,5 @@ URL parameters: `layout=<id>` (a file in `layouts/`), `demo` (force demo data), 
 | `docs/` | [Architecture](docs/ARCHITECTURE.md), [writing a module](docs/MODULES.md), [phase 1 plan](docs/PHASE1.md), [LabTouch1 screen](docs/LAB-TOUCH.md), [releasing](docs/RELEASE.md) |
 
 A build is static files with relative paths. On rackmain1, `console-release` builds `main` and serves it from the wall-ui folder as `/console/` (see [docs/RELEASE.md](docs/RELEASE.md)).
+
+Third-party code in the build: [Leaflet](https://leafletjs.com) 1.9 (BSD-2-Clause) for the radar map. Map tiles © OpenStreetMap contributors; radar from NOAA via the local-ops collector; aircraft from adsb.fi via the airspace collector.

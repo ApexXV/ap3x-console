@@ -17,7 +17,7 @@ Each becomes a module with its existing contract, demo data, detail view, change
 - [x] Host (CPU, memory, disks, load, uptime, API latency, containers, nodes) from `/api/status`
 - [x] Services from `/api/status` and the ops brief (the service list and aliases are a setting)
 - [x] Camera (go2rtc frame refresh on its own 5 s cycle) — later per-printer cameras through LabPi1
-- [ ] Local weather, radar map, aircraft, and forecast (Leaflet)
+- [x] Local weather, radar map, aircraft, and forecast (Leaflet): radar frame and alert shapes from local-ops, live aircraft with flight cards (adsbdb / adsb.lol lookups in the browser), NWS forecast
 - [x] Threat and ops feed
 - [x] FM operations (ClickUp): counts, deadlines, Lists with drill-in, mentions and comms
 - [ ] Business: bank, receipts, review queue, cash flow, books health, obligations, latest receipt (summaries from `ucs-layout-v2-data.js`)

@@ -150,3 +150,55 @@ describe("lab touch contracts", () => {
     expect(document.querySelector(".cam-live")).toBeNull();
   });
 });
+
+describe("local contracts", () => {
+  it("local: active alerts, critical count, roads, bounds, and aircraft filtering", async () => {
+    const { parseLocal, validBounds, aircraftFrom } = await import("../src/modules/local/parse");
+    const future = new Date(NOW + 3_600_000).toISOString(), past = new Date(NOW - 3_600_000).toISOString();
+    const map = {
+      type: "FeatureCollection", health: { state: "healthy" }, center: { lat: 38.5, lon: -98 },
+      radar: { state: "live", url: "/local-ops-data/radar.png", frame_at: new Date(NOW).toISOString(), bounds: [[37, -99], [39, -97]] },
+      sources: { nyseg: { without_power: 12 } },
+      features: [
+        { type: "Feature", geometry: { type: "Point", coordinates: [-98, 38] }, properties: { headline: "Tornado Warning", severity: "warning", expires: future } },
+        { type: "Feature", properties: { headline: "Route 9 closed", kind: "road closure", severity: "minor" } },
+        { type: "Feature", properties: { headline: "Old advisory", severity: "severe", expires: past } },
+      ],
+    };
+    const air = { generated_at: new Date(NOW - 30_000).toISOString(), aircraft: [
+      { id: "abc123", lat: 38, lon: -98, callsign: "TEST<1>", altitude_ft: 5000, distance_nm: 9 },
+      { id: "nothex", lat: 38, lon: -98 }, { id: "abc124", lat: 200, lon: -98 },
+      { id: "abc125", lat: 38.1, lon: -98.1, emergency: true, distance_nm: 40 },
+    ] };
+    const l = parseLocal(map, air, NOW);
+    expect(l).toMatchObject({ available: true, state: "HEALTHY", critical: 1, roads: 1, power: 12, headline: "Tornado Warning", aircraftFresh: true });
+    expect(l.alerts.map((a) => a.headline)).toEqual(["Tornado Warning", "Route 9 closed"]);
+    expect(l.shapes).toHaveLength(1);
+    expect(l.radarBounds).toEqual([[37, -99], [39, -97]]);
+    expect(l.aircraftList.map((a) => a.id)).toEqual(["abc125", "abc123"]);  // emergency first, invalid dropped
+    expect(l.aircraftList[1]!.callsign).toBe("TEST1");
+    expect(validBounds([[39, -97], [37, -99]])).toBeNull();
+    expect(aircraftFrom("nope")).toEqual([]);
+    expect(parseLocal(null, null, NOW)).toMatchObject({ available: false, state: "NO FEED", radarBounds: null, aircraftList: [] });
+  });
+
+  it("local: new alerts become changes, critical alerts outrank baseline", () => {
+    const local = getModule("local")!;
+    const quiet = local.model(context(local, local.demo!(NOW)));
+    const loud = structuredClone(quiet) as typeof quiet & { local: { alerts: { headline: string; severity: string }[]; critical: number; headline: string } };
+    loud.local.alerts.push({ headline: "Flash Flood Warning", severity: "WARNING", kind: "", area: null, expires: null } as never);
+    loud.local.critical = 1;
+    loud.local.headline = "Flash Flood Warning";
+    expect(local.changes!(quiet, loud)).toEqual([{ tone: "bad", kicker: "LOCAL", text: "Flash Flood Warning" }]);
+    expect(local.priority!(quiet)).toBeNull();
+    expect(local.priority!(loud)).toMatchObject({ rank: 60, title: "Flash Flood Warning", tone: "bad" });
+  });
+
+  it("flights: demo lookups resolve without the network", async () => {
+    const { lookupFlight } = await import("../src/modules/local/flights");
+    const { aircraftFrom } = await import("../src/modules/local/parse");
+    const [a] = aircraftFrom({ aircraft: [{ id: "a1b2c3", lat: 1, lon: 1, callsign: "UAL1505" }] });
+    const lookup = lookupFlight(a!, "demo", () => { throw new Error("demo lookups are synchronous"); });
+    expect(lookup).toMatchObject({ state: "ok", aircraft: { registration: "N78511" }, route: { origin: { code: "EWR" } } });
+  });
+});
