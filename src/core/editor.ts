@@ -187,9 +187,22 @@ export class LayoutEditor {
   private resetArmed = 0;
   private picker: HTMLElement | null = null;
   private observers: ResizeObserver[] = [];
+  /** Click-to-swap: the panel whose MOVE was clicked, waiting for a second panel. */
+  private picked: string | null = null;
 
   constructor(private host: EditorHost, private baseChanged = false) {
     host.stage.addEventListener("console-relayout", () => { if (this.active) this.decorate(); });
+    // Click-to-swap: after MOVE is clicked (not dragged), the next panel clicked swaps with it.
+    host.stage.addEventListener("click", (event) => {
+      if (!this.active || !this.picked) return;
+      const target = (event.target as HTMLElement).closest<HTMLElement>(".panel");
+      if (!target || (event.target as HTMLElement).closest(".edit-grip, .edit-remove, .edit-corner, .edit-bar")) return; // grips act on pointerdown
+      event.stopPropagation();
+      const other = target.id.replace(/^panel-/, "");
+      const first = this.picked;
+      this.unpick();
+      if (other !== first) this.commit(swapPanels(this.host.layout, first, other), "Panels swapped");
+    }, true);
     document.addEventListener("keydown", (event) => this.key(event));
   }
 
@@ -219,6 +232,7 @@ export class LayoutEditor {
       this.status();
     } else {
       this.bar?.remove();
+      this.unpick();
       this.closePicker();
       this.clearDecorations();
     }
@@ -440,8 +454,27 @@ export class LayoutEditor {
     corner.addEventListener("pointerdown", (event) => this.dragResize(event, article, panel, grid));
   }
 
+  /**
+   * MOVE: drag the panel onto another (it follows the pointer), or click MOVE and then click the
+   * other panel. The drop point is the grip's own position plus the distance dragged, the same
+   * relative measure resize uses, so it holds up when the pointer arrives through a host (Lively
+   * forwarding desktop input) whose absolute coordinates don't match the page.
+   */
   private dragMove(event: PointerEvent, article: HTMLElement, panel: LayoutPanel): void {
+    if (this.picked && this.picked !== panel.id) {
+      // Second click of click-to-swap landed on another panel's MOVE.
+      event.preventDefault();
+      event.stopPropagation();
+      const first = this.picked;
+      this.unpick();
+      this.commit(swapPanels(this.host.layout, first, panel.id), "Panels swapped");
+      return;
+    }
+    const grip = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const scale = this.scale();
+    const x0 = grip.left + grip.width / 2, y0 = grip.top + grip.height / 2;
     let target: HTMLElement | null = null;
+    let moved = 0;
     article.classList.add("is-moving");
     const mark = (next: HTMLElement | null) => {
       if (next === target) return;
@@ -450,17 +483,41 @@ export class LayoutEditor {
       target?.classList.add("is-drop");
     };
     this.drag(event, {
-      move: (_dx, _dy, e) => {
-        const hit = document.elementsFromPoint(e.clientX, e.clientY).find((n) => n instanceof HTMLElement && n.matches(".panel") && n !== article) as HTMLElement | undefined;
+      move: (dx, dy) => {
+        moved = Math.max(moved, Math.hypot(dx * scale, dy * scale));
+        article.style.transform = `translate(${dx}px, ${dy}px)`;
+        const x = x0 + dx * scale, y = y0 + dy * scale;
+        const hit = [...this.host.stage.querySelectorAll<HTMLElement>(".panel")].find((n) => {
+          if (n === article) return false;
+          const b = n.getBoundingClientRect();
+          return x >= b.left && x <= b.right && y >= b.top && y <= b.bottom;
+        });
         mark(hit ?? null);
       },
       end: (commit) => {
         article.classList.remove("is-moving");
+        article.style.transform = "";
         const drop = target;
         mark(null);
-        if (commit && drop) this.commit(swapPanels(this.host.layout, panel.id, drop.id.replace(/^panel-/, "")), "Panels swapped");
+        if (!commit) return;
+        if (moved < 8) { this.pick(panel.id); return; }
+        if (drop) this.commit(swapPanels(this.host.layout, panel.id, drop.id.replace(/^panel-/, "")), "Panels swapped");
+        else this.flash("Dropped outside a panel; nothing moved. Tip: click MOVE, then click the panel to swap with.");
       },
     });
+  }
+
+  private pick(id: string): void {
+    if (this.picked === id) { this.unpick(); this.status(); return; }
+    this.unpick();
+    this.picked = id;
+    this.host.stage.querySelector(`#panel-${id}`)?.classList.add("is-picked");
+    this.flash("Now click the panel to swap with (Esc cancels)");
+  }
+
+  private unpick(): void {
+    if (this.picked) this.host.stage.querySelector(`#panel-${this.picked}`)?.classList.remove("is-picked");
+    this.picked = null;
   }
 
   private dragResize(event: PointerEvent, article: HTMLElement, panel: LayoutPanel, grid: HTMLElement): void {
@@ -573,7 +630,10 @@ export class LayoutEditor {
     if ((event.target as HTMLElement)?.closest?.("input, textarea")) return;
     if (event.key.toLowerCase() === "e" && !event.ctrlKey && !event.metaKey && !event.altKey) { this.toggle(); return; }
     if (!this.active) return;
-    if (event.key === "Escape") { if (this.picker) this.closePicker(); else this.toggle(false); event.stopImmediatePropagation(); }
+    if (event.key === "Escape") {
+      if (this.picked) { this.unpick(); this.status(); } else if (this.picker) this.closePicker(); else this.toggle(false);
+      event.stopImmediatePropagation();
+    }
     else if (event.key.toLowerCase() === "z" && (event.ctrlKey || event.metaKey)) { event.preventDefault(); this.undo(); }
   }
 }

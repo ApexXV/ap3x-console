@@ -6,7 +6,7 @@ Layouts with the command dock (`command-57`, `command-1080`) can be rearranged o
 | --- | --- |
 | Change column widths | Drag a cyan line between OPS / BUSINESS / MARKETS. The widths go into the preset that is active in the dock: BALANCED, or the OPS / BUSINESS / MARKETS focus. Each preset keeps its own widths. |
 | Resize rows or columns inside a column | Drag the amber lines inside it. |
-| Move a panel | Drag its **⠿ MOVE** grip onto another panel. They swap contents, and each spot keeps its size, so the shape of the wall doesn't change. Works across columns. |
+| Move a panel | Drag its **⠿ MOVE** grip onto another panel (it follows the pointer), or **click** MOVE and then click the panel to swap with (Esc cancels). They swap contents, and each spot keeps its size, so the shape of the wall doesn't change. Works across columns. On the Lively wallpaper, click-to-swap is the easy way: Windows draws its desktop selection box during a drag, which is harmless but distracting. |
 | Make a panel bigger or smaller | Drag its bottom-right corner. It snaps to whole grid cells, and the label shows columns × rows. |
 | Add a panel | **+ PANEL** in a column head, then pick a module. |
 | Remove a panel | **×** on the panel. |
