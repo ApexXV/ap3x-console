@@ -202,3 +202,31 @@ describe("local contracts", () => {
     expect(lookup).toMatchObject({ state: "ok", aircraft: { registration: "N78511" }, route: { origin: { code: "EWR" } } });
   });
 });
+
+describe("business contracts", () => {
+  it("overdue obligations take the banner; review and receipt changes are logged", () => {
+    const obligations = getModule("business-obligations")!;
+    const m = obligations.model(context(obligations, obligations.demo!(NOW)));
+    expect(obligations.priority!(m)).toMatchObject({ rank: 85, title: "Q3 sales tax filing", posture: "OVERDUE" });
+    const review = getModule("business-review")!;
+    const before = review.model(context(review, review.demo!(NOW)));
+    const after = structuredClone(before);
+    after.review.totalOpen = 6;
+    expect(review.changes!(before, after)).toEqual([{ tone: "good", kicker: "BOOKS", text: "Review queue down to 6" }]);
+    const receipts = getModule("business-receipts")!;
+    const r1 = receipts.model(context(receipts, receipts.demo!(NOW)));
+    const r2 = structuredClone(r1);
+    r2.receipts.receiptCount = (r1.receipts.receiptCount ?? 0) + 1;
+    expect(receipts.changes!(r1, r2)).toEqual([{ tone: "good", kicker: "BUSINESS", text: "1 new receipt recorded" }]);
+  });
+
+  it("missing business feeds show unavailable, never zero", () => {
+    const bank = getModule("business-bank")!;
+    const m = bank.model(context(bank, {}));
+    expect(m.bank.postedNet).toBeNull();
+    expect(bank.chip!(m)).toEqual({ label: "UNAVAILABLE", tone: "muted" });
+    const body = document.createElement("div");
+    bank.render(body, m, context(bank, {}));
+    expect(body.querySelector(".kpi-value")!.textContent).toBe("—");
+  });
+});

@@ -20,7 +20,7 @@ Each becomes a module with its existing contract, demo data, detail view, change
 - [x] Local weather, radar map, aircraft, and forecast (Leaflet): radar frame and alert shapes from local-ops, live aircraft with flight cards (adsbdb / adsb.lol lookups in the browser), NWS forecast
 - [x] Threat and ops feed
 - [x] FM operations (ClickUp): counts, deadlines, Lists with drill-in, mentions and comms
-- [ ] Business: bank, receipts, review queue, cash flow, books health, obligations, latest receipt (summaries from `ucs-layout-v2-data.js`)
+- [x] Business: bank, receipts, review queue, cash flow, books health, obligations, latest receipt. The strict feed validators are a TypeScript port of `ucs-layout-v2-data.js`, checked by the wall's own tests (`test/business-summaries.test.ts`). Not ported yet: the weekly receipt / review history the wall keeps in its browser storage
 - [ ] Finance and markets: portfolio, watchlist, market sentinel, control and external
 - [ ] Console chrome: ticker (today/tonight strip), night mode, privacy toggle button, motion setting, music tile
 
