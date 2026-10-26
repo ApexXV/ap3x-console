@@ -1,6 +1,7 @@
 {
   "id": "command-57",
   "title": "COMMAND 57",
+  "logo": "/command-57-assets/ap3x-logo-horizontal-reversed.png",
   "stage": {
     "width": 7680,
     "height": 2160,
@@ -8,10 +9,52 @@
   },
   "refreshSeconds": 30,
   "regionColumns": "5fr 8fr 5fr",
+  "focus": {
+    "ops": "8fr 6fr 4fr",
+    "business": "4fr 11fr 4fr",
+    "markets": "4fr 6fr 8fr"
+  },
+  "dock": true,
+  "ticker": true,
+  "nightMode": true,
+  "music": true,
+  "links": [
+    {
+      "label": "BUSINESS",
+      "title": "Business Control",
+      "href": "/business-canary.html",
+      "key": "b"
+    },
+    {
+      "label": "FINANCE",
+      "title": "Finance",
+      "href": "/finance-canary.html",
+      "key": "f"
+    },
+    {
+      "label": "MARKETS",
+      "title": "Markets",
+      "href": "/markets-canary.html",
+      "key": "k"
+    },
+    {
+      "label": "LOCAL OPS",
+      "title": "Local Ops",
+      "href": "/local-ops-canary.html",
+      "key": "l"
+    },
+    {
+      "label": "UCS003",
+      "title": "Unified Command Surface",
+      "href": "/ucs003-canary.html",
+      "key": "u"
+    }
+  ],
   "regions": [
     {
       "id": "ops",
       "title": "OPERATIONS",
+      "short": "OPS",
       "columns": "repeat(2, minmax(0, 1fr))",
       "rows": "1.1fr 1fr .95fr .75fr .75fr",
       "panels": [
@@ -64,6 +107,7 @@
     {
       "id": "business",
       "title": "AP3X OPERATIONS LLC \u00b7 BUSINESS",
+      "short": "BUSINESS",
       "columns": "repeat(6, minmax(0, 1fr))",
       "rows": ".95fr 1.05fr 1.2fr",
       "panels": [
@@ -107,6 +151,7 @@
     {
       "id": "markets",
       "title": "FINANCE & MARKETS",
+      "short": "MARKETS",
       "columns": "minmax(0, 1fr)",
       "rows": "1.32fr 1.18fr .72fr .78fr",
       "panels": [

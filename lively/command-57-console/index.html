@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>AP3X Command 57</title>
+  <style>
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #071722; }
+    iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; }
+    #probe { visibility: hidden; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <!-- Lively shell: hosts the AP3X Console from rackmain1 so same-origin feeds keep working.
+       The console posts "ap3x-console-ready" after its first refresh. If that does not arrive
+       within 90 s, the old Command 57 wall is shown instead, and the console is retried in a
+       hidden frame every 15 minutes; when it answers, it takes the screen back. -->
+  <iframe id="wall" title="AP3X Command 57"></iframe>
+  <iframe id="probe" title="" aria-hidden="true" tabindex="-1"></iframe>
+  <script>
+    (function () {
+      "use strict";
+      const settings = {
+        wall: 0,
+        consoleUrl: "http://192.168.4.115:3098/console/index.html",
+        wallUrl: "http://192.168.4.115:3098/command-57.html",
+        motion: 0, focus: 0, layout: 0, privacy: 0,
+      };
+      const READY_MS = 90 * 1000;
+      const RETRY_MS = 15 * 60 * 1000;
+      const motions = ["full", "low", "off"];
+      const focuses = ["balanced", "ops", "business", "markets"];
+      const frame = document.getElementById("wall");
+      const probe = document.getElementById("probe");
+      let applyTimer = 0, readyTimer = 0, retryTimer = 0;
+      let fallback = false;
+
+      function page(href) {
+        let url;
+        try { url = new URL(href); } catch (_e) { return null; }
+        return url.protocol === "http:" || url.protocol === "https:" ? url : null;
+      }
+      function consoleUrl() {
+        const url = page(settings.consoleUrl);
+        if (!url) return null;
+        url.searchParams.set("layout", Number(settings.layout) === 1 ? "ops-1080" : "command-57");
+        url.searchParams.set("motion", motions[Number(settings.motion)] || "full");
+        url.searchParams.set("focus", focuses[Number(settings.focus)] || "balanced");
+        if (Number(settings.privacy) === 1) url.searchParams.set("privacy", "on"); else url.searchParams.delete("privacy");
+        return url;
+      }
+      function oldWallUrl() {
+        const url = page(settings.wallUrl);
+        if (!url) return null;
+        url.searchParams.set("motion", motions[Number(settings.motion)] || "full");
+        url.searchParams.set("focus", focuses[Number(settings.focus)] || "balanced");
+        if (Number(settings.layout) === 1) url.searchParams.set("layout", "1080"); else url.searchParams.delete("layout");
+        if (Number(settings.privacy) === 1) url.searchParams.set("privacy", "on"); else url.searchParams.delete("privacy");
+        return url;
+      }
+      function show(url) {
+        if (url && frame.src !== url.href) frame.src = url.href;
+      }
+      function clearTimers() {
+        clearTimeout(readyTimer); clearTimeout(retryTimer);
+        probe.removeAttribute("src");
+      }
+      function fallBack() {
+        clearTimers();
+        fallback = true;
+        show(oldWallUrl());
+        retryTimer = setTimeout(retry, RETRY_MS);
+      }
+      function retry() {
+        const url = consoleUrl();
+        if (!url) return;
+        probe.src = url.href;
+        readyTimer = setTimeout(fallBack, READY_MS);
+      }
+      function apply() {
+        clearTimeout(applyTimer);
+        applyTimer = setTimeout(function () {
+          clearTimers();
+          fallback = false;
+          if (Number(settings.wall) === 1) { show(oldWallUrl()); return; }
+          const url = consoleUrl();
+          if (!url) { fallBack(); return; }
+          show(url);
+          readyTimer = setTimeout(fallBack, READY_MS);
+        }, 150);
+      }
+
+      window.addEventListener("message", function (event) {
+        const data = event.data;
+        if (!data || data.type !== "ap3x-console-ready" || Number(settings.wall) === 1) return;
+        const expected = page(settings.consoleUrl);
+        if (!expected || event.origin !== expected.origin) return;
+        if (fallback && event.source === probe.contentWindow) {
+          clearTimers();
+          fallback = false;
+          show(consoleUrl());
+          readyTimer = setTimeout(fallBack, READY_MS);
+        } else if (!fallback && event.source === frame.contentWindow) {
+          clearTimeout(readyTimer);
+        }
+      });
+      window.livelyPropertyListener = function (name, value) {
+        if (name in settings) { settings[name] = value; apply(); }
+      };
+      apply();
+    })();
+  </script>
+</body>
+</html>

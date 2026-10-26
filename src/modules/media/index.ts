@@ -1,7 +1,8 @@
 import { bar, button, el, privateText, setTone, tag } from "../../core/dom";
 import { note, paged, place, sec, stats } from "../../core/detail";
-import { ageText, bytesText, clockOf, dayLabel, durationText, etaText, sinceMs } from "../../core/format";
-import type { ChangeEvent, DetailHooks, ModuleManifest, Tone } from "../../core/types";
+import { ageText, bytesText, clockOf, dayLabel, dayOf, durationText, etaText, sinceMs } from "../../core/format";
+import { eastHour, tonightLabel } from "../../core/ticker";
+import type { ChangeEvent, DetailHooks, ModuleManifest, TickerItem, Tone } from "../../core/types";
 import { diskStatus, failureText, isRunning, parseSessions, parseWorkloads, parseYoutube, retryWarnings, YT_PHASE,
   type Dated, type Importer, type QueueItem, type Sessions, type Stream, type Workloads, type Youtube } from "./parse";
 import "./media.css";
@@ -197,6 +198,22 @@ export const mediaModule: ModuleManifest<MediaModel> = {
         focus.phase === "held" ? ` · retry in ${ageText(Math.max(0, Date.parse(focus.holdUntil ?? "") - m.now) || 0)}${retryWarnings(focus, yt, m.now).length ? " · ⚠" : ""}`
           : focus.phase === "failed" ? ` · ${failureText(focus.failure)}` : ""}` : `${yt.importers.length} importers idle`}${yt.status === "STALE" ? " · STALE" : ""}`;
     body.replaceChildren(counters, flow, now, ytLine);
+  },
+
+  ticker(m) {
+    const ms = m.sessions;
+    const when = tonightLabel(m.now);
+    const today = dayOf(new Date(m.now).toISOString());
+    const items: TickerItem[] = [];
+    for (const u of (ms?.upcoming ?? []).filter((u) => u.at && dayOf(u.at) === today && Date.parse(u.at) > m.now - 3_600_000).slice(0, 3)) {
+      items.push({ label: when, value: `${u.title}${u.subtitle ? ` ${u.subtitle.split(" · ")[0]}` : ""} · ${u.kind === "airs" ? clockOf(u.at) : (u.kind ?? "release").toUpperCase()}${u.hasFile ? " · ON PLEX" : ""}`, hot: true, order: 1 });
+    }
+    for (const q of (ms?.queue ?? []).filter((q) => q.stage === "downloading" && q.eta !== null && q.eta <= 3600).slice(0, 2)) {
+      items.push({ label: "FINISHING", value: `${q.title}${q.subtitle && q.app === "sonarr" ? ` ${q.subtitle.split(" · ")[0]}` : ""} · ~${etaText(q.eta)}`, hot: true, order: 2 });
+    }
+    const summary = eastHour(m.now) >= 18 ? todayText(m) : null;
+    if (summary) items.push({ label: "MEDIA TODAY", value: summary, hot: true, order: 6 });
+    return items;
   },
 
   chip: chipFor,

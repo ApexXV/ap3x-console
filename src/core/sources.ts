@@ -57,6 +57,11 @@ export class SourceHub {
     return [...this.specs.keys()];
   }
 
+  /** The registered declaration for a source (its URL, schema, max age). */
+  spec(id: string): SourceSpec | undefined {
+    return this.specs.get(id);
+  }
+
   async refresh(): Promise<Record<string, SourceState>> {
     const entries = await Promise.all([...this.specs.values()].map(async (spec) => [spec.id, await this.fetchOne(spec)] as const));
     return Object.fromEntries(entries);

@@ -53,6 +53,8 @@ export const threatModule: ModuleManifest<ThreatModel, { rows: number }> = {
     body.replaceChildren(line, t.feed.length ? feed : el("p", "empty", "No current feed events"));
   },
 
+  ticker: (t) => t.feed.slice(0, 4).map((f) => ({ label: f.time, value: f.text, order: 40 })),
+
   chip: (t) => ({ label: `${t.level}${t.score === null ? "" : ` · ${t.score}`}`, tone: levelTone(t.level) }),
 
   detail(t) {

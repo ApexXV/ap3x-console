@@ -1,6 +1,7 @@
 import { bar, el, setTone } from "../../core/dom";
 import { dlist, linkButton, note, place, sec, stats, table } from "../../core/detail";
 import { ageLabel, clockOf, dueLabel, dueTone, money, signedMoney, sinceMs } from "../../core/format";
+import { tonightLabel } from "../../core/ticker";
 import type { Chip, ModuleManifest, Tone } from "../../core/types";
 import { cashflowChart, donut, obligationTimeline, weekBars } from "./charts";
 import { BUSINESS_SOURCES, type BusinessModel, businessModel, demoBusiness, REVIEW_ROWS, visible, weeksFromDaily } from "./model";
@@ -53,6 +54,10 @@ export const bankModule: Manifest = {
       el("div", "kpi-foot", ok ? `Bank movement · not profit${b.asOf ? ` · as of ${clockOf(b.asOf)} ET` : ""}` : "Banking unavailable · not profit"),
     );
   },
+
+  ticker: (m) => (visible(m.bank.state)
+    ? [{ label: "BANK 30D", value: `${signedMoney(m.bank.postedNet, 0)} net · ${money(m.bank.postedIn, 0)} in · ${money(m.bank.postedOut, 0)} out`, private: true, order: 10 }]
+    : []),
 
   chip: (m) => (visible(m.bank.state) ? stateChip(m.bank.state) : { label: m.bank.connected === false ? "DISCONNECTED" : "UNAVAILABLE", tone: "muted" }),
 
@@ -119,6 +124,10 @@ export const receiptsModule: Manifest = {
       facts([["DEPOSITED", ok ? money(rc.deposited, 0) : "—", "good"], ["UNDEPOSITED", ok ? money(rc.undeposited, 0) : "—", "warn"], ["UNKNOWN", ok ? money(rc.depositUnknown, 0) : "—", "muted"]]),
     );
   },
+
+  ticker: (m) => (visible(m.receipts.state)
+    ? [{ label: "RECEIVED 2026", value: `${money(m.receipts.grossReceived, 0)} across ${m.receipts.receiptCount} receipts`, private: true, order: 11 }]
+    : []),
 
   chip: (m) => stateChip(m.receipts.state),
 
@@ -201,6 +210,8 @@ export const reviewModule: Manifest = {
     }));
     body.replaceChildren(value, el("div", "kpi-sub", "open items · 2026 deductions ledger"), bars);
   },
+
+  ticker: (m) => (visible(m.review.state) ? [{ label: "BOOKS", value: `${m.review.totalOpen} ledger items open`, order: 13 }] : []),
 
   chip: (m) => (visible(m.review.state) ? { label: m.review.totalOpen ? "NEEDS REVIEW" : "CLEAR", tone: m.review.totalOpen ? "warn" : "good" } : { label: "UNAVAILABLE", tone: "muted" }),
 
@@ -314,6 +325,11 @@ export const obligationsModule: Manifest = {
     }));
     body.replaceChildren(obligationTimeline(m.obligations), list);
   },
+
+  ticker: (m) => [
+    ...m.obligations.filter((o) => o.days === 0).slice(0, 2).map((o) => ({ label: `DUE ${tonightLabel(m.now)}`, value: o.title, hot: true, order: 4 })),
+    ...m.obligations.slice(0, 3).map((o) => ({ label: "DUE", value: `${o.title} · ${dueLabel(o.days)}`, order: 12 })),
+  ],
 
   chip(m) {
     if (m.current.state !== "live") return { label: "UNAVAILABLE", tone: "muted" };

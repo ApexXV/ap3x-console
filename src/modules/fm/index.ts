@@ -1,6 +1,7 @@
 import { button, el, privateText, setTone } from "../../core/dom";
 import { dlist, note, place, sec, stats } from "../../core/detail";
 import { ageLabel, asDict, clockOf, daysUntil, dueLabel, dueTone, num, rows, sinceMs, text, toneFor } from "../../core/format";
+import { tonightLabel } from "../../core/ticker";
 import type { DetailHooks, ModuleManifest, Tone } from "../../core/types";
 import "./fm.css";
 
@@ -123,6 +124,16 @@ export const fmModule: ModuleManifest<FmModel, { title: string }> = {
     const wrap = el("div", "fm-body");
     wrap.append(counters, next);
     body.replaceChildren(wrap);
+  },
+
+  ticker(fm, ctx) {
+    if (!VISIBLE.has(fm.state) || fm.counts.open === null) return [];
+    const when = tonightLabel(ctx.now);
+    return [
+      ...fm.upcoming.filter((t) => t.days === 0 && !t.overdue).slice(0, 2).map((t) => ({ label: `FM ${when}`, value: `${t.title}${t.time ? ` · ${t.time}` : ""}`, hot: true, order: 5 })),
+      { label: "FM OPS", value: `${fm.counts.open} open · ${fm.counts.overdue ?? 0} overdue · ${fm.counts.dueSoon ?? 0} due in 7 days`, order: 20 },
+      ...fm.upcoming.slice(0, 2).map((t) => ({ label: "FM DUE", value: `${t.title} · ${dueText(t)}`, order: 20 })),
+    ];
   },
 
   chip: chipFor,
