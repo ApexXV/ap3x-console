@@ -48,3 +48,9 @@
 .feed-grid b { display: block; font-size: .7em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .feed-grid small { display: block; color: var(--muted); font-size: .53em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .feed-grid em { font-style: normal; font-weight: 700; font-size: .5em; letter-spacing: .12em; color: var(--tone); }
+.dtable { width: 100%; border-collapse: collapse; font-size: .6em; }
+.dtable th { text-align: left; color: var(--dim); font-weight: 600; font-size: .85em; letter-spacing: .14em; padding: .3em .5em; border-bottom: 1px solid var(--line-strong); }
+.dtable td { padding: .3em .5em; border-bottom: 1px solid rgba(56, 189, 202, .08); white-space: nowrap; }
+.dtable .num { text-align: right; font-family: var(--mono); }
+.dtable .dbar { display: block; min-width: 4em; }
+.link-btn { display: inline-block; margin-top: .5em; text-decoration: none; color: var(--text); }

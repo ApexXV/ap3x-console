@@ -167,3 +167,16 @@ export function dueLabel(days: number | null): string {
 }
 
 export const dueTone = (days: number | null): "bad" | "warn" | "info" | "muted" => (days === null ? "muted" : days < 0 ? "bad" : days <= 7 ? "warn" : "info");
+
+/** "$1,234.56" (or "$1,235" with digits = 0); "—" when unknown. */
+export function money(value: number | null | undefined, digits = 2): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  return value.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
+
+/** "+$12.00", "−$3", "$0.00". */
+export const signedMoney = (value: number | null | undefined, digits = 2): string =>
+  value === null || value === undefined || !Number.isFinite(value) ? "—" : `${value > 0 ? "+" : value < 0 ? "−" : ""}${money(Math.abs(value), digits)}`;
+
+export const signedPct = (value: number | null | undefined): string =>
+  value === null || value === undefined || !Number.isFinite(value) ? "—" : `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;

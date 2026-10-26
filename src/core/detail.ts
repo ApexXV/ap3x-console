@@ -67,3 +67,40 @@ export function paged<T>(state: Record<string, unknown>, key: string, items: T[]
   pager.append(up, el("span", "", `${start + 1}–${Math.min(items.length, start + perPage)} OF ${items.length}`), down);
   return [list, pager];
 }
+
+/** A table cell: plain text, [text, tone] for a colored value, or any element (a bar, a dot label). */
+export type Cell = string | number | null | [string | number | null, Tone] | HTMLElement;
+
+/** A compact table; `numeric` column indexes are right-aligned. Values can be blurred with `privateColumns`. */
+export function table(headers: string[], body: Cell[][], numeric: number[] = [], privateColumns: number[] = []): HTMLElement {
+  const node = el("table", "dtable");
+  const head = el("tr");
+  headers.forEach((h, i) => head.append(el("th", numeric.includes(i) ? "num" : "", h)));
+  node.append(el("thead"));
+  node.tHead!.append(head);
+  const tbody = el("tbody");
+  for (const row of body) {
+    const tr = el("tr");
+    row.forEach((cell, i) => {
+      const td = el("td", numeric.includes(i) ? "num" : "");
+      if (cell instanceof HTMLElement) td.append(cell);
+      else if (Array.isArray(cell)) { td.textContent = cell[0] === null ? "—" : String(cell[0]); td.style.color = toneVar(cell[1]); }
+      else td.textContent = cell === null ? "—" : String(cell);
+      if (privateColumns.includes(i)) td.dataset.private = "";
+      tr.append(td);
+    });
+    tbody.append(tr);
+  }
+  node.append(tbody);
+  return node;
+}
+
+/** A link styled as a button that opens another wall page (e.g. Business Control). */
+export function linkButton(label: string, href: string): HTMLElement {
+  const a = el("a", "btn link-btn", label);
+  a.href = href;
+  a.target = "_blank";
+  a.rel = "noopener";
+  a.addEventListener("click", (event) => event.stopPropagation());
+  return a;
+}

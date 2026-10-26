@@ -63,71 +63,43 @@
     },
     {
       "id": "business",
-      "title": "BUSINESS",
+      "title": "AP3X OPERATIONS LLC \u00b7 BUSINESS",
       "columns": "repeat(6, minmax(0, 1fr))",
       "rows": ".95fr 1.05fr 1.2fr",
       "panels": [
         {
           "id": "bank",
-          "module": "placeholder",
-          "title": "BANK",
-          "settings": {
-            "name": "Bank"
-          },
+          "module": "business-bank",
           "column": "span 2"
         },
         {
           "id": "receipts",
-          "module": "placeholder",
-          "title": "RECEIPTS",
-          "settings": {
-            "name": "Receipts"
-          },
+          "module": "business-receipts",
           "column": "span 2"
         },
         {
           "id": "review",
-          "module": "placeholder",
-          "title": "REVIEW QUEUE",
-          "settings": {
-            "name": "Review queue"
-          },
+          "module": "business-review",
           "column": "span 2"
         },
         {
           "id": "cashflow",
-          "module": "placeholder",
-          "title": "CASH FLOW",
-          "settings": {
-            "name": "Cash flow"
-          },
+          "module": "business-cashflow",
           "column": "span 4"
         },
         {
           "id": "health",
-          "module": "placeholder",
-          "title": "BOOKS HEALTH",
-          "settings": {
-            "name": "Books health"
-          },
+          "module": "business-health",
           "column": "span 2"
         },
         {
           "id": "obligations",
-          "module": "placeholder",
-          "title": "OBLIGATIONS",
-          "settings": {
-            "name": "Obligations"
-          },
+          "module": "business-obligations",
           "column": "span 4"
         },
         {
           "id": "allocation",
-          "module": "placeholder",
-          "title": "LATEST RECEIPT",
-          "settings": {
-            "name": "Latest receipt"
-          },
+          "module": "business-allocation",
           "column": "span 2"
         }
       ]
