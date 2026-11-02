@@ -1,0 +1,30 @@
+.mission-intro { display: flex; align-items: baseline; justify-content: space-between; gap: .5em; min-width: 0; }
+.mission-intro span { color: var(--dim); font-size: .54em; letter-spacing: .14em; white-space: nowrap; }
+.mission-intro b { color: var(--ap3x-cyan); font-family: var(--display); font-size: .82em; letter-spacing: .06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mission-cards { flex: 1 1 0; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: .42em; }
+.mission-card { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: .08em; min-width: 0; min-height: 0; padding: .4em .75em; cursor: pointer; text-align: left; border: 0; border-left: .24em solid var(--tone); background: linear-gradient(155deg, rgba(16, 41, 54, .95), rgba(7, 23, 34, .88)); }
+.mission-card:active { background: rgba(8, 126, 145, .5); }
+.mission-card:disabled { cursor: default; opacity: .6; }
+.mission-card span { color: var(--dim); font-size: .58em; font-weight: 700; letter-spacing: .18em; }
+.mission-card b { color: var(--tone); font-family: var(--display); font-size: 1.48em; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.mission-card small { color: var(--muted); font-size: .58em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.mission-focus { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: .45em; min-height: 2.8em; padding: .35em .55em; background: rgba(7, 23, 34, .7); border: 1px solid var(--line-strong); }
+.mission-focus-label { display: flex; flex-direction: column; gap: .1em; min-width: 0; }
+.mission-focus-label b { font-family: var(--display); font-size: .82em; letter-spacing: .1em; }
+.mission-focus-label small { color: var(--dim); font-size: .55em; letter-spacing: .12em; }
+.mission-focus-time { color: var(--ap3x-cyan); font-family: var(--display); font-size: 1.15em; font-variant-numeric: tabular-nums; }
+.mission-focus button { min-height: 2.2em; padding: 0 .8em; border: 1px solid var(--line-strong); background: rgba(16, 41, 54, .95); color: var(--text); cursor: pointer; font-family: var(--display); font-size: .72em; letter-spacing: .1em; }
+.mission-focus button:active { background: rgba(8, 126, 145, .7); }
+.mission-work { display: flex; flex-direction: column; gap: .45em; min-height: 0; height: 100%; }
+.mission-work-counters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4em; }
+.mission-work-count { display: flex; flex-direction: column; gap: .1em; min-width: 0; padding: .48em .65em; background: rgba(7, 23, 34, .66); border-left: .18em solid var(--tone); }
+.mission-work-count b { color: var(--tone); font-family: var(--display); font-size: 1.6em; line-height: 1; }
+.mission-work-count span { color: var(--dim); font-size: .52em; letter-spacing: .14em; }
+.mission-work-lists { display: grid; grid-template-columns: 1.3fr 1fr; gap: .45em; min-height: 0; flex: 1 1 0; }
+.mission-work-lists section { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: .45em; background: rgba(7, 23, 34, .5); }
+.mission-work-lists h4 { color: var(--ap3x-cyan); font-family: var(--display); font-size: .65em; letter-spacing: .16em; margin: 0 0 .45em; }
+.mission-work-list { list-style: none; display: flex; flex-direction: column; gap: .23em; min-height: 0; margin: 0; padding: 0; overflow-y: auto; }
+.mission-work-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .3em; min-height: 2.1em; padding: .25em .4em; background: rgba(16, 41, 54, .72); border-left: .14em solid var(--tone); font-size: .66em; }
+.mission-work-list li span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mission-work-list li em { color: var(--tone); font-style: normal; font-weight: 700; font-size: .82em; white-space: nowrap; }
+.mission-work-list li.mission-work-empty { display: flex; justify-content: center; color: var(--dim); border-left: 0; }

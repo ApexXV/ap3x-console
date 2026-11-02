@@ -5,6 +5,7 @@ import { SourceHub } from "../src/core/sources";
 import command57 from "../layouts/command-57.json";
 import ops1080 from "../layouts/ops-1080.json";
 import labTouch from "../layouts/lab-touch.json";
+import missionTouch from "../layouts/mission-touch.json";
 import command1080 from "../layouts/command-1080.json";
 import { registerBuiltins } from "../src/modules";
 import { getModule } from "../src/core/registry";
@@ -17,6 +18,7 @@ describe("layouts", () => {
     expect(validateLayout(command57, known)).toEqual([]);
     expect(validateLayout(ops1080, known)).toEqual([]);
     expect(validateLayout(labTouch, known)).toEqual([]);
+    expect(validateLayout(missionTouch, known)).toEqual([]);
     expect(validateLayout(command1080, known)).toEqual([]);
   });
 

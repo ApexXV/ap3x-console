@@ -11,15 +11,17 @@ import { labNodeModule } from "./labnode";
 import { localModule } from "./local";
 import { marketsModules } from "./markets";
 import { mediaModule } from "./media";
+import { missionHomeModule, missionLabModule, missionWorkModule } from "./mission";
 import { netIoModule } from "./netio";
 import { nodesModule } from "./nodes";
 import { placeholderModule } from "./placeholder";
+import { missionProjectsModule } from "./projects";
 import { servicesModule } from "./services";
 import { threatModule } from "./threat";
 import { weatherModule } from "./weather";
 
 /** Built-in modules. A module is registered once and can appear in any number of layout panels. */
 export function registerBuiltins(): void {
-  for (const module of [hostModule, servicesModule, cameraModule, threatModule, fmModule, nodesModule, feedsModule, labModule, mediaModule, placeholderModule,
+  for (const module of [hostModule, servicesModule, cameraModule, threatModule, fmModule, nodesModule, feedsModule, labModule, mediaModule, missionHomeModule, missionLabModule, missionWorkModule, missionProjectsModule, placeholderModule,
     homeModule, weatherModule, climateModule, labNodeModule, netIoModule, localModule, ...businessModules, ...marketsModules]) registerModule(module);
 }
