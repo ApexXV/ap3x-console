@@ -1,0 +1,11 @@
+.mission-projects-intro { display: flex; align-items: baseline; justify-content: space-between; gap: .6em; padding: .1em .2em .35em; }
+.mission-projects-intro strong { color: var(--ap3x-cyan); font-family: var(--display); font-size: .8em; letter-spacing: .14em; }
+.mission-projects-intro small { color: var(--dim); font-size: .48em; letter-spacing: .1em; text-align: right; }
+.mission-projects-grid { flex: 1 1 0; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: .45em; }
+.mission-project { display: flex; flex-direction: column; min-width: 0; min-height: 0; gap: .3em; padding: .55em .7em; border-left: .2em solid var(--tone); background: rgba(7, 23, 34, .7); }
+.mission-project h4 { color: var(--text); font-family: var(--display); font-size: .85em; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mission-project-step { flex: 1 1 0; min-height: 0; }
+.mission-project-step span { color: var(--dim); font-size: .5em; letter-spacing: .15em; }
+.mission-project-step p { margin: .2em 0 0; color: var(--muted); font-size: .66em; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mission-project-status { align-self: flex-start; min-width: 8em; min-height: 3.2em; padding: .35em .8em; border: 1px solid var(--tone); background: color-mix(in srgb, var(--tone) 14%, rgba(7, 23, 34, .8)); color: var(--tone); font-family: var(--display); font-size: .66em; font-weight: 700; letter-spacing: .1em; cursor: pointer; }
+.mission-project-status:active { background: color-mix(in srgb, var(--tone) 40%, rgba(7, 23, 34, .8)); }

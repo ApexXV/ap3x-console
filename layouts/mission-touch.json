@@ -1,0 +1,138 @@
+{
+  "id": "mission-touch",
+  "title": "AP3X DESK",
+  "stage": {
+    "width": 800,
+    "height": 480,
+    "fontSize": 18
+  },
+  "refreshSeconds": 30,
+  "regionColumns": "minmax(0, 1fr)",
+  "navigation": "pages",
+  "chrome": "compact",
+  "homeAfterSeconds": 600,
+  "clock": "12h",
+  "regions": [
+    {
+      "id": "today",
+      "title": "TODAY",
+      "columns": "minmax(0, 1fr)",
+      "rows": "minmax(0, 1fr)",
+      "panels": [
+        {
+          "id": "mission-home",
+          "module": "mission-home",
+          "title": "AP3X · TODAY",
+          "settings": {
+            "pages": {
+              "work": "work",
+              "business": "business",
+              "lab": "lab",
+              "systems": "systems"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "work",
+      "title": "WORK",
+      "columns": "minmax(0, 1fr)",
+      "rows": "minmax(0, 1fr)",
+      "panels": [
+        {
+          "id": "ap3x-work",
+          "module": "mission-work",
+          "title": "AP3X · WORK QUEUE"
+        }
+      ]
+    },
+    {
+      "id": "business",
+      "title": "BOOKS",
+      "columns": "minmax(0, 1fr)",
+      "rows": "minmax(0, 1fr)",
+      "panels": [
+        {
+          "id": "books-review",
+          "module": "business-review",
+          "title": "AP3X · REVIEW QUEUE"
+        }
+      ]
+    },
+    {
+      "id": "lab",
+      "title": "LAB",
+      "columns": "minmax(0, 1fr)",
+      "rows": "minmax(0, 1fr)",
+      "panels": [
+        {
+          "id": "lab-devices",
+          "module": "mission-lab",
+          "title": "X1C & PHOTON MONO M7"
+        }
+      ]
+    },
+    {
+      "id": "systems",
+      "title": "SYSTEMS",
+      "columns": "minmax(0, 1fr)",
+      "rows": "minmax(0, 1fr)",
+      "panels": [
+        {
+          "id": "mission-nodes",
+          "module": "node-status",
+          "title": "AP3X · MACHINES"
+        }
+      ]
+    },
+    {
+      "id": "projects",
+      "title": "PROJECTS",
+      "columns": "minmax(0, 1fr)",
+      "rows": "minmax(0, 1fr)",
+      "panels": [
+        {
+          "id": "ap3x-projects",
+          "module": "mission-projects",
+          "title": "AP3X · RESEARCH & PLANS",
+          "settings": {
+            "projects": [
+              {
+                "id": "mission-touch",
+                "title": "LABTOUCH1 · AP3X DESK",
+                "next": "Review the new touch layout and choose its first connected action.",
+                "status": "DOING"
+              },
+              {
+                "id": "labpi1-role",
+                "title": "LABPI1 · NEW ROLE",
+                "next": "Choose its media and lab-service roles before changing the Pi.",
+                "status": "NEXT"
+              },
+              {
+                "id": "ap3x-work",
+                "title": "AP3X · WORK FEED",
+                "next": "Define the projects and tasks to include beyond business obligations.",
+                "status": "NEXT"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "markets",
+      "title": "MARKETS",
+      "columns": "minmax(0, 1fr)",
+      "rows": "minmax(0, 1fr)",
+      "panels": [
+        {
+          "id": "market-signals",
+          "module": "sentinel",
+          "title": "MARKET SIGNALS"
+        }
+      ]
+    }
+  ]
+}
