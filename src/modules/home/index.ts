@@ -2,6 +2,7 @@ import { el, setTone } from "../../core/dom";
 import { clockOf, TZ } from "../../core/format";
 import type { ModuleManifest, Tone } from "../../core/types";
 import { labModule, parseLab, PRINTERS_SOURCE } from "../lab";
+import { neutralOwnedDemo, ownedLabDevices } from "../lab/owned";
 import { demoLabNode } from "../labnode/demo";
 import { LAB_NODE_SOURCE, parseLabNode, rateText } from "../labnode/parse";
 import { nodesModule, NODE_STATUS_SOURCE, parseNodes } from "../nodes";
@@ -15,6 +16,7 @@ interface Card { key: string; label: string; value: string; detail: string; tone
 interface HomeModel { place: string; temp: number | null; condition: string | null; cards: Card[] }
 interface HomeSettings extends Record<string, unknown> {
   place: string;
+  ownedOnly?: boolean;
   /** Page (region id) each card opens. */
   pages: { printers?: string; nodes?: string; network?: string };
 }
@@ -49,7 +51,9 @@ export const homeModule: ModuleManifest<HomeModel, HomeSettings> = {
   sources: [PRINTERS_SOURCE, NODE_STATUS_SOURCE, LAB_NODE_SOURCE, WEATHER_SOURCE, LOCAL_OPS_SOURCE],
 
   model(ctx) {
-    const lab = parseLab(ctx.sources.printers?.data, ctx.now);
+    const allLab = parseLab(ctx.sources.printers?.data, ctx.now);
+    const owned = ctx.settings.ownedOnly ? ownedLabDevices(allLab) : allLab;
+    const lab = ctx.settings.ownedOnly && ctx.mode === "demo" ? neutralOwnedDemo(owned) : owned;
     const nodes = parseNodes(ctx.sources["node-status"]?.data, ctx.now, []);
     const net = parseLabNode(ctx.sources["lab-node"]?.data, ctx.now);
     const weather = parseWeather(ctx.sources.weather?.data, ctx.sources["local-ops"]?.data);
@@ -66,10 +70,11 @@ export const homeModule: ModuleManifest<HomeModel, HomeSettings> = {
       cards: [
         {
           key: "printers", label: "PRINTERS", page: pages.printers ?? null,
-          value: lab.status === "NO FEED" ? "—" : `${lab.active}/${lab.devices.length}`,
+          value: lab.status === "NO FEED" ? "—" : `${lab.active}/${lab.expected ?? lab.devices.length}`,
           detail: lab.status === "NO FEED" ? "No printer feed" : lab.errors ? `${lab.errors} need attention`
+            : lab.expected && lab.devices.length < lab.expected ? `${lab.devices.length}/${lab.expected} in feed`
             : finishing ? `${finishing.name} · ${Math.max(1, Math.round(finishing.job!.remaining! / 60))} min left` : lab.active ? "Working" : "All idle",
-          tone: lab.status === "NO FEED" ? "muted" : lab.errors ? "bad" : lab.status === "STALE" ? "warn" : lab.active ? "info" : "good",
+          tone: lab.status === "NO FEED" ? "muted" : lab.errors ? "bad" : lab.status === "STALE" || (lab.expected !== undefined && lab.devices.length < lab.expected) ? "warn" : lab.active ? "info" : "good",
         },
         {
           key: "nodes", label: "MACHINES", page: pages.nodes ?? null,
