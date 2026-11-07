@@ -12,13 +12,15 @@ Set that URL in `/etc/labtouch/kiosk.env` (`KIOSK_URL=...`) on LabTouch1 and run
 
 | Page | Panels | Feeds |
 | --- | --- | --- |
-| HOME | Clock, date, outdoor temperature; tiles for X1C and Photon Mono M7 status, machines, network (tap to open the page) | `/printers-data`, `/node-status-data`, `/lab-node-data`, `/api/weather` |
-| PRINTERS | X1C and Photon Mono M7 only; tap for one device at a time. A missing M7 shows NOT IN FEED. | `/printers-data/current.json` (AP3X-PRINTERS-1) |
-| CAMERAS | Lab Cam (Wyze) and X1C; still frames every 3 s; tap a camera, then WATCH LIVE | rackmain1's go2rtc: `/go2rtc/api/frame.jpeg?src=lab_cam` or `lab_x1c`, `/go2rtc/stream.html?src=...` |
+| HOME | Clock, date, outdoor temperature; tiles for expected printer feed coverage, machines, network (tap to open the page) | `/printers-data`, `/node-status-data`, `/lab-node-data`, `/api/weather` |
+| PRINTERS | X1C, M7, M7 Pro, H2C, P2S, and R1 Laser, followed by any additional feed devices; tap for one device at a time | `/printers-data/current.json` (AP3X-PRINTERS-1) |
+| CAMERAS | Lab Cam (Wyze, large) plus X1C, H2C, P2S, R1; still frames every 3 s; tap a camera, then WATCH LIVE | rackmain1's go2rtc: `/go2rtc/api/frame.jpeg?src=lab_*`, `/go2rtc/stream.html?src=lab_*` |
 | CLIMATE | Outside conditions and 7-day forecast; lab temperature, HVAC, and lights reserved | `/api/weather`, `/local-ops-data/current.geojson` (map center for the NWS forecast) |
 | NETWORK | LabPi1 throughput (10 minutes), interfaces, health, and every machine | `/lab-node-data/current.json` (AP3X-LAB-NODE-1), `/node-status-data` |
 
 After two minutes without a touch the screen returns to HOME. A live video view closes itself after ten minutes.
+
+The expected printer roster remains visible when the collector has no status for a device. Its card says **NOT IN FEED**; a device explicitly reported as offline by the collector says **OFFLINE**. HOME shows how many of the six expected devices are in the feed, and additional feed devices appear after the roster. These placeholders do not count as active, offline, or error devices.
 
 ## Nothing sensitive on the screen
 
@@ -28,8 +30,8 @@ LabTouch1 holds no credentials. It reads the same read-only, same-origin feeds a
 
 The printers' cameras are on the lab LAN, which rackmain1 can't reach directly:
 
-1. go2rtc on LabPi1 reads the X1C's camera (Bambu LAN live view) and serves RTSP on its Tailscale address only.
-2. rackmain1's existing go2rtc adds the camera streams from LabPi1, named `lab_cam` and `lab_x1c`.
+1. go2rtc on LabPi1 relays available printer cameras and serves RTSP on its Tailscale address only.
+2. rackmain1's go2rtc uses stream names `lab_cam`, `lab_x1c`, `lab_h2c`, `lab_p2s`, and `lab_r1` as each camera is connected.
 3. The console asks rackmain1's go2rtc (already proxied at `/go2rtc/`) for frames and the live player.
 
 Until step 2 exists the camera tiles say WAITING FOR A FRAME.

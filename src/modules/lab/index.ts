@@ -2,7 +2,7 @@ import { bar, button, el, setTone, tag } from "../../core/dom";
 import { note } from "../../core/detail";
 import { ageText, asDict, clockOf, dayLabel, durationText, etaText, num, rows, sinceMs, text } from "../../core/format";
 import type { ModuleManifest, Tone } from "../../core/types";
-import { OWNED_PRINTERS, neutralOwnedDemo, ownedLabDevices, ownedPrinter, type OwnedPrinter } from "./owned";
+import { labRosterCoverage, labRosterEntries } from "./roster";
 import "./lab.css";
 
 /* Lab printers and laser from the AP3X-PRINTERS-1 feed (rackmain1 lab printer collector). */
@@ -21,12 +21,11 @@ export interface LabDevice {
 export interface LabModel {
   status: "LIVE" | "STALE" | "NO FEED";
   devices: LabDevice[];
-  expected?: number;
+  roster?: { present: number; expected: number; missing: number };
   active: number; errors: number; offline: number;
 }
 
-interface LabSettings extends Record<string, unknown> { ownedOnly?: boolean }
-const OWNED_LABEL: Record<OwnedPrinter, string> = { x1c: "X1C", m7: "PHOTON MONO M7" };
+interface LabSettings extends Record<string, unknown> { fullRoster?: boolean }
 
 const KIND_LABEL: Record<Kind, string> = { fdm: "FDM", resin: "RESIN", laser: "LASER" };
 export const STATE_LABEL: Record<State, [string, Tone]> = {
@@ -83,7 +82,7 @@ const chipFor = (m: LabModel): { label: string; tone: Tone } =>
   m.status === "NO FEED" ? { label: "NO FEED", tone: "muted" }
     : m.status === "STALE" ? { label: "FEED STALE", tone: "bad" }
       : m.errors ? { label: `${m.errors} ERROR`, tone: "bad" }
-        : m.expected && m.devices.length < m.expected ? { label: `${m.devices.length}/${m.expected} IN FEED`, tone: "warn" }
+        : m.roster?.missing ? { label: `${m.roster.present}/${m.roster.expected} IN FEED`, tone: "warn" }
         : m.active ? { label: `${m.active} ACTIVE`, tone: "info" } : { label: "ALL IDLE", tone: "good" };
 
 export const PRINTERS_SOURCE = { id: "printers", url: "/printers-data/current.json", schema: "AP3X-PRINTERS-1", stampField: "generated_at", maxAgeMs: STALE_MS, optional: true };
@@ -97,23 +96,19 @@ export const labModule: ModuleManifest<LabModel, LabSettings> = {
 
   model: (ctx) => {
     const lab = parseLab(ctx.sources.printers?.data, ctx.now);
-    if (!ctx.settings.ownedOnly) return lab;
-    const owned = ownedLabDevices(lab);
-    return ctx.mode === "demo" ? neutralOwnedDemo(owned) : owned;
+    return ctx.settings.fullRoster ? { ...lab, roster: labRosterCoverage(lab) } : lab;
   },
 
   render(body, m, ctx) {
-    if (!m.devices.length && !ctx.settings.ownedOnly) { body.replaceChildren(el("p", "empty", m.status === "NO FEED" ? "No printer feed yet" : "No devices in the feed")); return; }
-    const grid = el("div", ctx.settings.ownedOnly ? "lab-grid is-owned" : "lab-grid");
-    const devices = ctx.settings.ownedOnly
-      ? OWNED_PRINTERS.map((id) => ({ id, device: m.devices.find((d) => ownedPrinter(d) === id) }))
-      : m.devices.slice(0, 6).map((device) => ({ id: null, device }));
-    grid.append(...devices.map(({ id, device: d }) => {
+    if (!m.devices.length && !m.roster) { body.replaceChildren(el("p", "empty", m.status === "NO FEED" ? "No printer feed yet" : "No devices in the feed")); return; }
+    const grid = el("div", m.roster ? "lab-grid is-roster" : "lab-grid");
+    const entries = m.roster ? labRosterEntries(m) : m.devices.slice(0, 6).map((device) => ({ name: device.name, kind: device.kind, device }));
+    grid.append(...entries.map(({ name, kind, device: d }) => {
       if (!d) {
-        const tile = el("div", "lab-tile is-offline");
+        const tile = el("div", "lab-tile is-absent");
         setTone(tile, "muted");
         const head = el("div", "lab-head");
-        head.append(el("b", "", OWNED_LABEL[id!]), el("span", "lab-kind", id === "m7" ? "RESIN" : "FDM"),
+        head.append(el("b", "", name), el("span", "lab-kind", KIND_LABEL[kind]),
           el("em", "", m.status === "NO FEED" ? "NO FEED" : "NOT IN FEED"));
         tile.append(head, el("small", "", m.status === "NO FEED" ? "Lab collector unavailable" : "Status not connected"));
         return tile;
@@ -122,7 +117,7 @@ export const labModule: ModuleManifest<LabModel, LabSettings> = {
       const tile = el("div", `lab-tile is-${d.state}`);
       setTone(tile, tone);
       const head = el("div", "lab-head");
-      head.append(el("b", "", id ? OWNED_LABEL[id] : d.name), el("span", "lab-kind", KIND_LABEL[d.kind]), el("em", "", label));
+      head.append(el("b", "", name), el("span", "lab-kind", KIND_LABEL[d.kind]), el("em", "", label));
       const pct = d.job?.progress ?? (d.state === "finished" ? 1 : null);
       const showing = ACTIVE.has(d.state) || d.state === "finished";
       const meter = el("div", "lab-meter");
@@ -140,17 +135,29 @@ export const labModule: ModuleManifest<LabModel, LabSettings> = {
 
   detail(m, ctx, hooks) {
     // Small screens show one device at a time with a picker; wide screens show every card.
-    const single = ctx.stageWidth < 1600 && m.devices.length > 1;
-    const selected = Math.min(Number(hooks.state.device ?? 0), Math.max(0, m.devices.length - 1));
+    const entries = m.roster ? labRosterEntries(m) : m.devices.map((device) => ({ name: device.name, kind: device.kind, device }));
+    const single = ctx.stageWidth < 1600 && entries.length > 1;
+    const selected = Math.min(Number(hooks.state.device ?? 0), Math.max(0, entries.length - 1));
     const cards = el("div", single ? "lab-cards is-single" : "lab-cards");
-    cards.append(...(single ? m.devices.slice(selected, selected + 1) : m.devices).map((d) => {
+    cards.append(...(single ? entries.slice(selected, selected + 1) : entries).map(({ name, kind, device: d }) => {
+      if (!d) {
+        const state = m.status === "NO FEED" ? "NO FEED" : "NOT IN FEED";
+        const card = el("section", "lab-card is-absent");
+        setTone(card, "muted");
+        const head = el("header"), title = el("div");
+        title.append(el("b", "", name), el("small", "", KIND_LABEL[kind]));
+        head.append(title, tag(state, "muted"));
+        const big = el("div", "lab-big");
+        big.append(el("b", "", state), el("span", "", m.status === "NO FEED" ? "Lab collector unavailable" : "No status from lab collector"));
+        card.append(head, big);
+        return card;
+      }
       const [label, tone] = STATE_LABEL[d.state];
       const card = el("section", `lab-card is-${d.state}`);
       setTone(card, tone);
       const head = el("header");
       const title = el("div");
-      const ownedId = ctx.settings.ownedOnly ? ownedPrinter(d) : null;
-      title.append(el("b", "", ownedId ? OWNED_LABEL[ownedId] : d.name), el("small", "", [KIND_LABEL[d.kind], d.model].filter(Boolean).join(" · ")));
+      title.append(el("b", "", name), el("small", "", [KIND_LABEL[d.kind], d.model].filter(Boolean).join(" · ")));
       head.append(title, tag(label, tone));
       card.append(head);
       if (d.job) card.append(el("p", "lab-job", d.job.name ?? "Unnamed job"));
@@ -183,24 +190,21 @@ export const labModule: ModuleManifest<LabModel, LabSettings> = {
       card.append(grid);
       return card;
     }));
-    const picker = el("nav", "lab-picker");
+    const picker = el("nav", m.roster ? "lab-picker is-roster" : "lab-picker");
     if (single) {
-      picker.append(...m.devices.map((d, i) => {
-        const ownedId = ctx.settings.ownedOnly ? ownedPrinter(d) : null;
-        const name = ownedId ? OWNED_LABEL[ownedId] : d.name;
+      picker.append(...entries.map(({ name, device: d }, i) => {
         const chip = button(name, `Show ${name}`, () => { hooks.state.device = i; hooks.rebuild(); }, i === selected ? "btn is-active" : "btn");
-        setTone(chip, STATE_LABEL[d.state][1]);
+        setTone(chip, d ? STATE_LABEL[d.state][1] : "muted");
         return chip;
       }));
     }
-    const missing = ctx.settings.ownedOnly ? OWNED_PRINTERS.filter((id) => !m.devices.some((d) => ownedPrinter(d) === id)) : [];
     return {
-      title: ctx.settings.ownedOnly ? "LAB · PRINTERS" : "LAB · PRINTERS & LASER", chip: chipFor(m),
-      foot: `${m.devices.length}${ctx.settings.ownedOnly ? "/2 in feed" : " devices"} · read-only status from the lab collector${missing.length ? ` · ${missing.map((id) => OWNED_LABEL[id]).join(", ")} not in feed` : ""}`,
+      title: "LAB · PRINTERS & LASER", chip: chipFor(m),
+      foot: m.roster ? `${m.roster.present}/${m.roster.expected} expected devices in feed · ${m.devices.length} feed devices total`
+        : `${m.devices.length} devices · read-only status from the lab collector`,
       columns: "minmax(0, 1fr)", rows: single ? "auto minmax(0, 1fr)" : "minmax(0, 1fr)",
-      sections: m.devices.length ? (single ? [picker, cards] : [cards])
-        : [note(m.status === "NO FEED" ? "No printer feed yet. Set up the lab collector (ap3x-wall-data-collectors, docs/printers-contract.md)."
-          : ctx.settings.ownedOnly ? "X1C and Photon Mono M7 are not in the collector feed yet." : "No devices in the printer feed.")],
+      sections: entries.length ? (single ? [picker, cards] : [cards])
+        : [note("No printer feed yet. Set up the lab collector (ap3x-wall-data-collectors, docs/printers-contract.md).")],
     };
   },
 
@@ -235,16 +239,16 @@ export const labModule: ModuleManifest<LabModel, LabSettings> = {
         schema_version: "AP3X-PRINTERS-1", generated_at: at(0),
         devices: [
           { key: "m7-pro", name: "M7 PRO", kind: "resin", model: "Anycubic Photon Mono M7 Pro", state: "printing", material: "Grey resin", material_left_pct: 62, temps: { vat: 27 },
-            job: { name: "viola-top-plate-jig", progress: 0.58, elapsed_s: 5400, remaining_s: 3900, layer: 1210, layers: 2086 }, updated_at: at(0) },
+            job: { name: "Sample resin print", progress: 0.58, elapsed_s: 5400, remaining_s: 3900, layer: 1210, layers: 2086 }, updated_at: at(0) },
           { key: "m7", name: "M7", kind: "resin", model: "Anycubic Photon Mono M7", state: "idle", note: "Last job stopped at 37%", temps: { vat: 22 }, updated_at: at(0) },
           { key: "x1c", name: "X1C", kind: "fdm", model: "Bambu Lab X1 Carbon", state: "printing", material: "PETG", temps: { nozzle: 240, nozzle_target: 240, bed: 80, bed_target: 80 },
-            job: { name: "harp-string-guide", progress: 0.91, elapsed_s: 9800, remaining_s: 1020, layer: 182, layers: 200 }, updated_at: at(0) },
+            job: { name: "Sample X1C print", progress: 0.91, elapsed_s: 9800, remaining_s: 1020, layer: 182, layers: 200 }, updated_at: at(0) },
           { key: "h2c", name: "H2C", kind: "fdm", model: "Bambu Lab H2C", state: "finished", material: "PLA",
-            job: { name: "panel-knobs-x12", progress: 1, elapsed_s: 7200, remaining_s: 0 }, updated_at: at(0) },
+            job: { name: "Sample H2C print", progress: 1, elapsed_s: 7200, remaining_s: 0 }, updated_at: at(0) },
           { key: "p2s", name: "P2S", kind: "fdm", model: "Bambu Lab P2S", state: "error", error: "Printer error 0700-8001", material: "PLA",
-            temps: { nozzle: 210, nozzle_target: 210, bed: 60, bed_target: 60 }, job: { name: "bracket-v3", progress: 0.37, elapsed_s: 3100, remaining_s: 5300, layer: 88, layers: 240 }, updated_at: at(0) },
+            temps: { nozzle: 210, nozzle_target: 210, bed: 60, bed_target: 60 }, job: { name: "Sample P2S print", progress: 0.37, elapsed_s: 3100, remaining_s: 5300, layer: 88, layers: 240 }, updated_at: at(0) },
           { key: "r1", name: "R1 LASER", kind: "laser", model: "Bambu Lab R1", state: "cutting", laser_power_pct: 70, material: "3 mm birch ply",
-            job: { name: "fret-template", progress: 0.24, elapsed_s: 300, remaining_s: 950 }, updated_at: at(0) },
+            job: { name: "Sample laser cut", progress: 0.24, elapsed_s: 300, remaining_s: 950 }, updated_at: at(0) },
         ],
       },
     };
