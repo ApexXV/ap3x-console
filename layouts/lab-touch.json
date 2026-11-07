@@ -25,6 +25,7 @@
           "title": "AP3X LAB",
           "settings": {
             "place": "LAB",
+            "ownedOnly": true,
             "pages": {
               "printers": "printers",
               "nodes": "network",
@@ -43,15 +44,18 @@
         {
           "id": "printers",
           "module": "lab-printers",
-          "title": "LAB PRINTERS"
+          "title": "LAB PRINTERS",
+          "settings": {
+            "ownedOnly": true
+          }
         }
       ]
     },
     {
       "id": "cameras",
       "title": "CAMERAS",
-      "columns": "repeat(3, minmax(0, 1fr))",
-      "rows": "repeat(2, minmax(0, 1fr))",
+      "columns": "repeat(2, minmax(0, 1fr))",
+      "rows": "minmax(0, 1fr)",
       "panels": [
         {
           "id": "cam-lab",
@@ -63,8 +67,7 @@
             "streamUrl": "/go2rtc/stream.html?src=lab_cam&mode=mse",
             "refreshSeconds": 3,
             "liveMinutes": 10
-          },
-          "row": "1 / 3"
+          }
         },
         {
           "id": "cam-x1c",
@@ -74,42 +77,6 @@
             "label": "X1C",
             "url": "/go2rtc/api/frame.jpeg?src=lab_x1c",
             "streamUrl": "/go2rtc/stream.html?src=lab_x1c&mode=mse",
-            "refreshSeconds": 3,
-            "liveMinutes": 10
-          }
-        },
-        {
-          "id": "cam-h2c",
-          "module": "camera",
-          "title": "H2C",
-          "settings": {
-            "label": "H2C",
-            "url": "/go2rtc/api/frame.jpeg?src=lab_h2c",
-            "streamUrl": "/go2rtc/stream.html?src=lab_h2c&mode=mse",
-            "refreshSeconds": 3,
-            "liveMinutes": 10
-          }
-        },
-        {
-          "id": "cam-p2s",
-          "module": "camera",
-          "title": "P2S",
-          "settings": {
-            "label": "P2S",
-            "url": "/go2rtc/api/frame.jpeg?src=lab_p2s",
-            "streamUrl": "/go2rtc/stream.html?src=lab_p2s&mode=mse",
-            "refreshSeconds": 3,
-            "liveMinutes": 10
-          }
-        },
-        {
-          "id": "cam-r1",
-          "module": "camera",
-          "title": "R1 LASER",
-          "settings": {
-            "label": "R1 LASER",
-            "url": "/go2rtc/api/frame.jpeg?src=lab_r1",
-            "streamUrl": "/go2rtc/stream.html?src=lab_r1&mode=mse",
             "refreshSeconds": 3,
             "liveMinutes": 10
           }

@@ -12,9 +12,9 @@ Set that URL in `/etc/labtouch/kiosk.env` (`KIOSK_URL=...`) on LabTouch1 and run
 
 | Page | Panels | Feeds |
 | --- | --- | --- |
-| HOME | Clock, date, outdoor temperature; tiles for printers, machines, network (tap to open the page) | `/printers-data`, `/node-status-data`, `/lab-node-data`, `/api/weather` |
-| PRINTERS | Every printer and the laser; tap for one device at a time | `/printers-data/current.json` (AP3X-PRINTERS-1) |
-| CAMERAS | Lab Cam (Wyze, large) plus X1C, H2C, P2S, R1; still frames every 3 s; tap a camera, then WATCH LIVE | rackmain1's go2rtc: `/go2rtc/api/frame.jpeg?src=lab_*`, `/go2rtc/stream.html?src=lab_*` |
+| HOME | Clock, date, outdoor temperature; tiles for X1C and Photon Mono M7 status, machines, network (tap to open the page) | `/printers-data`, `/node-status-data`, `/lab-node-data`, `/api/weather` |
+| PRINTERS | X1C and Photon Mono M7 only; tap for one device at a time. A missing M7 shows NOT IN FEED. | `/printers-data/current.json` (AP3X-PRINTERS-1) |
+| CAMERAS | Lab Cam (Wyze) and X1C; still frames every 3 s; tap a camera, then WATCH LIVE | rackmain1's go2rtc: `/go2rtc/api/frame.jpeg?src=lab_cam` or `lab_x1c`, `/go2rtc/stream.html?src=...` |
 | CLIMATE | Outside conditions and 7-day forecast; lab temperature, HVAC, and lights reserved | `/api/weather`, `/local-ops-data/current.geojson` (map center for the NWS forecast) |
 | NETWORK | LabPi1 throughput (10 minutes), interfaces, health, and every machine | `/lab-node-data/current.json` (AP3X-LAB-NODE-1), `/node-status-data` |
 
@@ -28,8 +28,8 @@ LabTouch1 holds no credentials. It reads the same read-only, same-origin feeds a
 
 The printers' cameras are on the lab LAN, which rackmain1 can't reach directly:
 
-1. go2rtc on LabPi1 reads each printer's camera (Bambu LAN live view) and serves RTSP on its Tailscale address only.
-2. rackmain1's existing go2rtc adds one stream per camera from LabPi1, named `lab_cam`, `lab_x1c`, `lab_h2c`, `lab_p2s`, `lab_r1`.
+1. go2rtc on LabPi1 reads the X1C's camera (Bambu LAN live view) and serves RTSP on its Tailscale address only.
+2. rackmain1's existing go2rtc adds the camera streams from LabPi1, named `lab_cam` and `lab_x1c`.
 3. The console asks rackmain1's go2rtc (already proxied at `/go2rtc/`) for frames and the live player.
 
 Until step 2 exists the camera tiles say WAITING FOR A FRAME.
