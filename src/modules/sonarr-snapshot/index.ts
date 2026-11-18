@@ -1,5 +1,5 @@
 import { sec } from "../../core/detail";
-import { el, privateText, tag, tile, tileRow } from "../../core/dom";
+import { el, privateText, replaceKeepingScroll, tag, tile, tileRow } from "../../core/dom";
 import type { ModuleManifest } from "../../core/types";
 import { parseSnapshot } from "./parse";
 import type { Snapshot, Transfer } from "./parse";
@@ -33,6 +33,7 @@ function transferRow(row: Transfer): HTMLTableRowElement {
 
 function roster(m: Snapshot): HTMLElement {
   const scroll = el("div", "snap-scroll");
+  scroll.dataset.preserveScroll = "";
   scroll.tabIndex = 0; scroll.setAttribute("role", "region"); scroll.setAttribute("aria-label", "Flagged transfer table");
   const table = el("table", "snap-table"); table.setAttribute("aria-label", "Saved Sonarr transfers");
   const header = table.createTHead().insertRow();
@@ -94,7 +95,7 @@ export const sonarrSnapshotModule: ModuleManifest<Snapshot | null> = {
     const open = el("button", "btn", "Open detail"); open.type = "button";
     open.addEventListener("click", e => { e.stopPropagation(); body.closest("article")?.click(); });
     foot.append(open);
-    body.replaceChildren(metrics, grid, foot);
+    replaceKeepingScroll(body, metrics, grid, foot);
   },
   detail(m) {
     if (!m) return { title: "Sonarr transfers", columns: "1fr", rows: "1fr", sections: [sec(null, missing())] };

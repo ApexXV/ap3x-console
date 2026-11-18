@@ -1,6 +1,6 @@
 import { ChangeLog, type LoggedChange } from "./changes";
 import { Chrome } from "./chrome";
-import { el, chipNode, setTone, svgEl } from "./dom";
+import { el, chipNode, replaceKeepingScroll, setTone, svgEl } from "./dom";
 import { LayoutEditor } from "./editor";
 import { dlist, note, sec, stats } from "./detail";
 import { ageLabel, clockFormat, clockOf, dayOf, setClockFormat, TZ } from "./format";
@@ -220,7 +220,7 @@ export class Console {
       renderTicker(this.tickerNode, ticker, `${this.options.mode === "demo" ? "DEMO" : `REFRESH ${this.layout.refreshSeconds ?? 30}S`} · ${clockOf(new Date(now).toISOString())} · AP3XOPERATIONS.COM`);
     }
     if (log) this.restartRing();
-    if (this.detailId) this.buildDetail();
+    if (this.detailId) this.buildDetail(true);
   }
 
   openDetail(panelId: string, section?: string): void {
@@ -397,7 +397,7 @@ export class Console {
     return this.overlay;
   }
 
-  private buildDetail(): void {
+  private buildDetail(keepScroll = false): void {
     const id = this.detailId;
     if (!id) return;
     let view: DetailView;
@@ -440,7 +440,8 @@ export class Console {
     const foot = el("footer", "detail-foot");
     foot.append(el("span", "", view.foot ?? ""), el("span", "", "ESC OR CLICK OUTSIDE TO CLOSE"));
     card.append(head, body, foot);
-    this.overlay.replaceChildren(card);
+    if (keepScroll) replaceKeepingScroll(this.overlay, card);
+    else this.overlay.replaceChildren(card);
   }
 
   // ---------------------------------------------------------------- runtime helpers

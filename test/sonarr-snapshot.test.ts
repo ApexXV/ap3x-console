@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { sonarrSnapshotModule as module } from "../src/modules/sonarr-snapshot";
 import { parseSnapshot } from "../src/modules/sonarr-snapshot/parse";
-import type { ModuleContext } from "../src/core/types";
+import type { Layout, ModuleContext } from "../src/core/types";
 import { Console } from "../src/core/console";
 import { SourceHub } from "../src/core/sources";
 import { registerModule } from "../src/core/registry";
 import { mediaModule } from "../src/modules/media";
+import pilotLayout from "../layouts/sonarr-snapshot-pilot.json";
 
 const at = "2026-11-18T02:48:02Z";
 const ctx: ModuleContext = { mode: "demo", now: Date.parse(at), stageWidth: 1600, settings: {}, sources: {} };
@@ -41,12 +42,15 @@ describe("Sonarr snapshot pilot", () => {
     panel.querySelector<HTMLButtonElement>(".media-snapshot")!.click();
     expect(root.querySelector(".detail-title h2")!.textContent).toBe("Sonarr transfers");
     expect(root.querySelectorAll(".detail .snap-table tbody tr")).toHaveLength(1);
+    root.querySelector<HTMLElement>(".detail .snap-scroll")!.scrollTop = 480;
     await wall.refresh();
+    expect(root.querySelector<HTMLElement>(".detail .snap-scroll")!.scrollTop).toBe(480);
     expect(root.querySelector(".detail .snap-evidence")?.textContent).toContain("S18E12–E20");
     root.querySelector<HTMLButtonElement>('.detail button[title="Return to media pipeline"]')!.click();
     expect(root.querySelector(".detail-title h2")!.textContent).toBe("MEDIA PIPELINE");
     root.querySelector<HTMLButtonElement>('.detail button[title="Open the saved transfer table"]')!.click();
     expect(root.querySelector(".detail-title h2")!.textContent).toBe("Sonarr transfers");
+    expect(root.querySelector<HTMLElement>(".detail .snap-scroll")!.scrollTop).toBe(0);
     wall.closeDetail();
     panel.click();
     expect(root.querySelector(".detail-title h2")!.textContent).toBe("MEDIA PIPELINE");
@@ -55,6 +59,34 @@ describe("Sonarr snapshot pilot", () => {
     expect(panel.querySelector(".media-snapshot")).toBeNull();
     expect(panel.querySelector(".media-yt")).not.toBeNull();
     wall.stop();
+  });
+
+  it("keeps independent table positions and keyboard focus when the dedicated report refreshes", async () => {
+    registerModule(module);
+    const archive = sample();
+    const hub = new SourceHub(async () => archive);
+    const root = document.createElement("div");
+    document.body.append(root);
+    const wall = new Console({ root, hub, mode: "live", storage: null, layout: pilotLayout as Layout }).mount();
+    try {
+      await wall.refresh();
+      const panel = root.querySelector<HTMLElement>(".panel .snap-scroll")!;
+      panel.scrollTop = 320;
+      root.querySelector<HTMLButtonElement>(".snap-foot button")!.click();
+      const detail = root.querySelector<HTMLElement>(".detail .snap-scroll")!;
+      detail.scrollTop = 640;
+      detail.focus();
+      archive.rows[0]!.progress_pct = 25;
+      await wall.refresh();
+      const updated = root.querySelector<HTMLElement>(".detail .snap-scroll")!;
+      expect(root.querySelector<HTMLElement>(".panel .snap-scroll")!.scrollTop).toBe(320);
+      expect(updated.scrollTop).toBe(640);
+      expect(updated.querySelector("progress")?.value).toBe(25);
+      expect(document.activeElement).toBe(updated);
+    } finally {
+      wall.stop();
+      root.remove();
+    }
   });
   it("gives each described transfer one row and keeps resolved historical seasons out of the queue", () => {
     const m = parseSnapshot(sample());
