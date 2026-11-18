@@ -16,6 +16,7 @@ import { netIoModule } from "./netio";
 import { nodesModule } from "./nodes";
 import { placeholderModule } from "./placeholder";
 import { missionProjectsModule } from "./projects";
+import { rackStewardModule } from "./rack-steward";
 import { servicesModule } from "./services";
 import { sonarrSnapshotModule } from "./sonarr-snapshot";
 import { threatModule } from "./threat";
@@ -24,5 +25,5 @@ import { weatherModule } from "./weather";
 /** Built-in modules. A module is registered once and can appear in any number of layout panels. */
 export function registerBuiltins(): void {
   for (const module of [hostModule, servicesModule, cameraModule, threatModule, fmModule, nodesModule, feedsModule, labModule, mediaModule, missionHomeModule, missionLabModule, missionWorkModule, missionProjectsModule, placeholderModule,
-    homeModule, weatherModule, climateModule, labNodeModule, netIoModule, localModule, sonarrSnapshotModule, ...businessModules, ...marketsModules]) registerModule(module);
+    homeModule, weatherModule, climateModule, labNodeModule, netIoModule, localModule, sonarrSnapshotModule, rackStewardModule, ...businessModules, ...marketsModules]) registerModule(module);
 }

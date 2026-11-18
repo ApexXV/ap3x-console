@@ -1,0 +1,17 @@
+.rack-report { display: flex; flex: 1; flex-direction: column; gap: .65em; min-height: 0; min-width: 0; }
+.rack-byline, .rack-heading { display: flex; align-items: baseline; justify-content: space-between; gap: .6em; }
+.rack-byline p { color: var(--muted); font-size: .65em; }
+.rack-columns { display: grid; flex: 1; min-height: 0; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: .85em; }
+.rack-scroll { overflow: auto; min-width: 0; padding: 0 .6em .5em 0; scrollbar-color: var(--line-strong) transparent; }
+.rack-scroll:focus-visible { outline: 2px solid var(--ap3x-cyan); outline-offset: -2px; }
+.rack-scroll h4 { margin: .45em 0; color: var(--muted); font: 650 .72em var(--display); letter-spacing: .04em; }
+.rack-scroll p { margin: .35em 0; font-size: .76em; line-height: 1.35; overflow-wrap: anywhere; }
+.rack-scroll .rack-muted, .rack-attribution, .rack-source small { color: var(--muted); }
+.rack-issue, .rack-source { padding: .55em .65em; margin-bottom: .45em; background: rgba(16,41,54,.65); border-left: 2px solid var(--line-strong); }
+.rack-heading h3 { font: 650 .92em var(--display); overflow-wrap: anywhere; }
+.rack-source strong { font: 600 .8em var(--display); text-transform: capitalize; }
+.rack-source small, .rack-attribution { display: block; margin: .3em 0 0; font: .64em var(--mono); }
+.rack-facts { display: flex; flex-wrap: wrap; gap: .3em 1em; margin: .6em 0; font: .68em var(--mono); }
+.rack-facts div { display: flex; gap: .42em; overflow-wrap: anywhere; }
+.rack-facts dt { color: var(--muted); }
+.rack-facts dd { margin: 0; }

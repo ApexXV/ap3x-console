@@ -1,6 +1,7 @@
 node_modules/
 public/pilot-data/
 public/sonarr-snapshot-data/
+public/rack-steward-data/
 dist/
 coverage/
 *.log

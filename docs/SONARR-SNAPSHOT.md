@@ -1,5 +1,7 @@
 # Sonarr snapshot pilot
 
+For scheduled RackMain1 observations, select **Rack Steward** on the Media Pipeline tile or open `/console/index.html?layout=rack-steward`. The report reads `/rack-steward-data/current.json` on the wall’s origin. It shows the check time, source coverage, new or changed issues, the model and generation time for each available explanation, and recoveries from the past 24 hours. Missing or stale source data leaves previously detected issues unconfirmed. After 35 minutes without an updated report the display marks it overdue. Follow-up actions are manual.
+
 On Command 57, open **Operations → Media Pipeline → Sonarr snapshot**. Select the dated summary directly to inspect transfers, or use the snapshot button inside Media Pipeline. **Back to Media** returns to the normal media details. On the 1080p display, select the Operations tab first. The dedicated view is `/console/index.html?layout=sonarr-snapshot-pilot`.
 
 The saved summary reads `/sonarr-snapshot-data/current.json` on the wall's existing origin. It shows the source observation date. Opening the panel reads archived data and does not contact Sonarr or qBittorrent. If a valid feed is unavailable, the normal Media Pipeline view still works.

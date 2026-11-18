@@ -6,8 +6,9 @@
 .media-yt[data-tone="bad"] { color: var(--bad); }
 .media-yt[data-tone="warn"] { color: var(--warn); }
 .media-yt[data-tone="info"] { color: var(--ap3x-cyan); }
-.media-snapshot { flex-shrink: 0; width: fit-content; max-width: 100%; padding: .12em .42em; font-family: var(--display); font-weight: 600; color: var(--ap3x-cyan); background: transparent; border: 1px solid var(--line-strong); cursor: pointer; }
-.media-snapshot:hover, .media-snapshot:focus-visible { background: rgba(8, 126, 145, .25); }
+.media-reports { display: flex; flex: 0 0 auto; gap: .3em; min-width: 0; }
+.media-reports button { min-width: 0; max-width: 100%; padding: .12em .42em; font-family: var(--display); font-weight: 600; color: var(--ap3x-cyan); background: transparent; border: 1px solid var(--line-strong); cursor: pointer; }
+.media-reports button:hover, .media-reports button:focus-visible { background: rgba(8, 126, 145, .25); }
 
 .stream { cursor: pointer; transition: background .2s; }
 .stream:hover { background: rgba(8, 126, 145, .35); }

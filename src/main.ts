@@ -28,8 +28,8 @@ function boot(): void {
     root.textContent = `Layout problem: ${problems.join("; ")}. Available: ${Object.values(layouts).map((l) => l.id).join(", ")}`;
     return;
   }
-  // This pilot's only source is a saved JSON file served alongside the console.
-  const live = layout.id === "sonarr-snapshot-pilot" || params.get("runtime") === "live" || (!params.has("demo") && !["localhost", "127.0.0.1"].includes(location.hostname));
+  // Dedicated reports read the local JSON published by Rack Steward, including in development.
+  const live = ["sonarr-snapshot-pilot", "rack-steward"].includes(layout.id) || params.get("runtime") === "live" || (!params.has("demo") && !["localhost", "127.0.0.1"].includes(location.hostname));
   // A layout edited on this screen (the layout editor) replaces the built-in one until it is reset.
   const saved = layout.dock ? loadSaved(layout, safeLocalStorage(), (id) => Boolean(getModule(id))) : null;
   const console_ = new Console({ layout: saved?.layout ?? layout, base: layout, baseChanged: saved?.baseChanged, root, mode: live ? "live" : "demo" }).mount();
