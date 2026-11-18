@@ -223,9 +223,14 @@ export class Console {
     if (this.detailId) this.buildDetail();
   }
 
-  openDetail(panelId: string): void {
+  openDetail(panelId: string, section?: string): void {
     const panel = this.panels.find((p) => p.spec.id === panelId);
     if (panelId !== "changes" && panelId !== "sources" && !panel?.module.detail) return;
+    if (panel) {
+      const state = this.detailState.get(panelId) ?? {};
+      state.entrySection = section;
+      this.detailState.set(panelId, state);
+    }
     this.detailId = panelId;
     this.overlay.hidden = false;
     this.buildDetail();
@@ -443,7 +448,8 @@ export class Console {
   private contextFor(panel: PanelInstance, states: Record<string, SourceState>, now: number): ModuleContext {
     const missing = (id: string): SourceState => ({ id, status: "unknown", data: null, ageMs: null, fetchedAt: null, seen: false });
     const sources = Object.fromEntries(panel.module.sources.map((s) => [s.id, states[s.id] ?? missing(s.id)]));
-    return { now, mode: this.options.mode, settings: { ...(panel.module.defaults ?? {}), ...(panel.spec.settings ?? {}) }, sources, stageWidth: this.layout.stage.width };
+    return { now, mode: this.options.mode, settings: { ...(panel.module.defaults ?? {}), ...(panel.spec.settings ?? {}) },
+      sources, stageWidth: this.layout.stage.width, openDetail: section => this.openDetail(panel.spec.id, section) };
   }
 
   private demoPayloads(now: number): Record<string, unknown> {

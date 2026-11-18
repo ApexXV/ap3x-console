@@ -2,12 +2,14 @@ import { bar, button, el, privateText, setTone, tag } from "../../core/dom";
 import { note, paged, place, sec, stats } from "../../core/detail";
 import { ageText, bytesText, clockOf, dayLabel, dayOf, durationText, etaText, sinceMs } from "../../core/format";
 import { eastHour, tonightLabel } from "../../core/ticker";
+import { sonarrSnapshotModule } from "../sonarr-snapshot";
+import { parseSnapshot, type Snapshot } from "../sonarr-snapshot/parse";
 import type { ChangeEvent, DetailHooks, ModuleManifest, TickerItem, Tone } from "../../core/types";
 import { diskStatus, failureText, isRunning, parseSessions, parseWorkloads, parseYoutube, retryWarnings, YT_PHASE,
   type Dated, type Importer, type QueueItem, type Sessions, type Stream, type Workloads, type Youtube } from "./parse";
 import "./media.css";
 
-export interface MediaModel { workloads: Workloads; sessions: Sessions | null; youtube: Youtube | null; streams: number | null; now: number }
+export interface MediaModel { workloads: Workloads; sessions: Sessions | null; youtube: Youtube | null; streams: number | null; now: number; snapshot: Snapshot | null }
 
 const DECISION: Record<Stream["decision"], [string, Tone]> = { transcode: ["TRANSCODE", "warn"], direct_stream: ["DIRECT STREAM", "info"], direct_play: ["DIRECT PLAY", "good"] };
 const STAGE: Record<string, [string, Tone]> = {
@@ -156,6 +158,7 @@ export const mediaModule: ModuleManifest<MediaModel> = {
     { id: "workloads", url: "/api/ops/workloads", stampField: "generated_at", maxAgeMs: 5 * 60_000 },
     { id: "media-sessions", url: "/media-sessions-data/current.json", schema: "AP3X-MEDIA-SESSIONS-1", stampField: "generated_at", maxAgeMs: 2 * 60_000 },
     { id: "youtube", url: "/youtube-archive-data/current.json", schema: "AP3X-YOUTUBE-ARCHIVE-1", stampField: "generated_at", maxAgeMs: 3 * 60_000 },
+    ...sonarrSnapshotModule.sources,
   ],
 
   model(ctx) {
@@ -163,10 +166,11 @@ export const mediaModule: ModuleManifest<MediaModel> = {
     const sessions = parseSessions(ctx.sources["media-sessions"]?.data, ctx.now);
     const youtube = parseYoutube(ctx.sources.youtube?.data, ctx.now);
     const streams = sessions?.status === "LIVE" && sessions.plexState === "LIVE" ? sessions.streamCount : null;
-    return { workloads, sessions, youtube, streams, now: ctx.now };
+    const snapshot = parseSnapshot(ctx.sources["sonarr-snapshot"]?.data);
+    return { workloads, sessions, youtube, streams, now: ctx.now, snapshot };
   },
 
-  render(body, m) {
+  render(body, m, ctx) {
     const counters = el("div", "counters");
     const counter = (value: number | null, label: string, tone?: Tone) => {
       const cell = el("div");
@@ -198,6 +202,11 @@ export const mediaModule: ModuleManifest<MediaModel> = {
         focus.phase === "held" ? ` · retry in ${ageText(Math.max(0, Date.parse(focus.holdUntil ?? "") - m.now) || 0)}${retryWarnings(focus, yt, m.now).length ? " · ⚠" : ""}`
           : focus.phase === "failed" ? ` · ${failureText(focus.failure)}` : ""}` : `${yt.importers.length} importers idle`}${yt.status === "STALE" ? " · STALE" : ""}`;
     body.replaceChildren(counters, flow, now, ytLine);
+    if (m.snapshot) {
+      const date = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", month: "short", day: "numeric" }).format(new Date(m.snapshot.observedAt));
+      const summary = `Sonarr · Saved ${date} · ${m.snapshot.transfers.length} flagged transfers · ${m.snapshot.gaps} library gaps ›`;
+      body.append(button(summary, "Open saved Sonarr transfer progress and library gaps", () => ctx.openDetail?.("sonarr-snapshot"), "media-line media-snapshot"));
+    }
   },
 
   ticker(m) {
@@ -219,6 +228,11 @@ export const mediaModule: ModuleManifest<MediaModel> = {
   chip: chipFor,
 
   detail(m, ctx, hooks) {
+    if (m.snapshot && hooks.state.entrySection === "sonarr-snapshot" && sonarrSnapshotModule.detail) {
+      const detail = sonarrSnapshotModule.detail(m.snapshot, ctx, hooks);
+      detail.sections[0]?.prepend(button("‹ Media pipeline", "Return to media pipeline", () => ctx.openDetail?.()));
+      return detail;
+    }
     const { workloads: w, sessions: ms, youtube: yt } = m;
     const small = ctx.stageWidth < 4000;
     const perPage = small ? 4 : 5;
@@ -241,6 +255,7 @@ export const mediaModule: ModuleManifest<MediaModel> = {
 
     const queue = ms?.queue ?? [];
     const downloads = place(sec(`DOWNLOADS & IMPORTS${ms ? ` · SONARR ${ms.services.sonarr} · RADARR ${ms.services.radarr} · QBIT ${ms.services.qbittorrent}` : ""}`,
+      m.snapshot ? button("Saved Sonarr transfers ›", "Open the saved transfer table", () => ctx.openDetail?.("sonarr-snapshot")) : null,
       ...(ms ? (queue.length ? paged(hooks.state, "queue", queue, perPage + 1, (q) => queueRow(q, m.now), hooks.rebuild) : [note("Sonarr and Radarr queues are empty.")])
         : [note(`MA001 workloads: ${w.state.toLowerCase()}`)])), "2", "2");
 

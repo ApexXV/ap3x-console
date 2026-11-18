@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { sonarrSnapshotModule as module } from "../src/modules/sonarr-snapshot";
 import { parseSnapshot } from "../src/modules/sonarr-snapshot/parse";
 import type { ModuleContext } from "../src/core/types";
+import { Console } from "../src/core/console";
+import { SourceHub } from "../src/core/sources";
+import { registerModule } from "../src/core/registry";
+import { mediaModule } from "../src/modules/media";
 
 const at = "2026-11-18T02:48:02Z";
 const ctx: ModuleContext = { mode: "demo", now: Date.parse(at), stageWidth: 1600, settings: {}, sources: {} };
@@ -20,6 +24,38 @@ function sample() {
 }
 
 describe("Sonarr snapshot pilot", () => {
+  it("opens the snapshot directly from the wall, preserves the normal Media detail, and tolerates an absent archive", async () => {
+    registerModule(mediaModule);
+    let archived: unknown = sample();
+    const feed = module.sources[0]!.url;
+    const hub = new SourceHub(async url => url === feed ? archived : {});
+    const root = document.createElement("div");
+    const wall = new Console({ root, hub, mode: "live", storage: null, layout: {
+      id: "command-57", title: "COMMAND 57", stage: { width: 7680, height: 2160, fontSize: 30 },
+      regionColumns: "1fr", regions: [{ id: "ops", title: "Operations", columns: "1fr", rows: "1fr", panels: [{ id: "media", module: "media" }] }],
+    }}).mount();
+    await wall.refresh();
+    const panel = root.querySelector<HTMLElement>("#panel-media")!;
+    expect(panel.querySelector(".media-yt")).not.toBeNull();
+    expect(panel.querySelector(".media-snapshot")?.textContent).toMatch(/Saved Nov 17.+1 flagged.+9 library gaps/);
+    panel.querySelector<HTMLButtonElement>(".media-snapshot")!.click();
+    expect(root.querySelector(".detail-title h2")!.textContent).toBe("Sonarr transfers");
+    expect(root.querySelectorAll(".detail .snap-table tbody tr")).toHaveLength(1);
+    await wall.refresh();
+    expect(root.querySelector(".detail .snap-evidence")?.textContent).toContain("S18E12–E20");
+    root.querySelector<HTMLButtonElement>('.detail button[title="Return to media pipeline"]')!.click();
+    expect(root.querySelector(".detail-title h2")!.textContent).toBe("MEDIA PIPELINE");
+    root.querySelector<HTMLButtonElement>('.detail button[title="Open the saved transfer table"]')!.click();
+    expect(root.querySelector(".detail-title h2")!.textContent).toBe("Sonarr transfers");
+    wall.closeDetail();
+    panel.click();
+    expect(root.querySelector(".detail-title h2")!.textContent).toBe("MEDIA PIPELINE");
+    archived = null;
+    await wall.refresh();
+    expect(panel.querySelector(".media-snapshot")).toBeNull();
+    expect(panel.querySelector(".media-yt")).not.toBeNull();
+    wall.stop();
+  });
   it("gives each described transfer one row and keeps resolved historical seasons out of the queue", () => {
     const m = parseSnapshot(sample());
     expect(m).not.toBeNull();

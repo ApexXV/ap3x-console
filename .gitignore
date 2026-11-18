@@ -1,5 +1,6 @@
 node_modules/
 public/pilot-data/
+public/sonarr-snapshot-data/
 dist/
 coverage/
 *.log

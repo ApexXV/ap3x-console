@@ -75,7 +75,7 @@ const missing = () => el("p", "module-error", "Saved snapshot unavailable. Provi
 export const sonarrSnapshotModule: ModuleManifest<Snapshot | null> = {
   id: "sonarr-snapshot", title: "Sonarr transfers", version: "1.0.0",
   description: "Saved RackMain1 transfer progress, episode coverage and verified season gaps.",
-  sources: [{ id: "sonarr-snapshot", url: "./pilot-data/sonarr-snapshot.json" }],
+  sources: [{ id: "sonarr-snapshot", url: "/sonarr-snapshot-data/current.json", optional: true }],
   model: ctx => parseSnapshot(ctx.sources["sonarr-snapshot"]?.data),
   chip: m => ({ label: m ? "SAVED SNAPSHOT" : "UNAVAILABLE", tone: m ? "info" : "warn" }),
   priority: m => ({ rank: 1, kicker: "RACK STEWARD", title: m ? "Saved Sonarr queue" : "Snapshot unavailable",
