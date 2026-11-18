@@ -48,6 +48,22 @@ export function privateText(node: HTMLElement): HTMLElement {
   return node;
 }
 
+/** Redraw a view while keeping its marked scroll region in place for the reader. */
+export function replaceKeepingScroll(parent: HTMLElement, ...children: Node[]): void {
+  const selector = "[data-preserve-scroll]";
+  const previous = parent.querySelector<HTMLElement>(selector);
+  const top = previous?.scrollTop ?? 0;
+  const left = previous?.scrollLeft ?? 0;
+  const focused = previous === document.activeElement;
+  parent.replaceChildren(...children);
+  if (!previous || (!top && !left && !focused)) return;
+  const next = parent.querySelector<HTMLElement>(selector);
+  if (!next) return;
+  next.scrollTop = top;
+  next.scrollLeft = left;
+  if (focused) next.focus({ preventScroll: true });
+}
+
 /** An SVG line chart of one or more series sharing a y scale (0..max), newest on the right. */
 export function sparkline(series: { values: number[]; tone: Tone; fill?: boolean }[], label: string): SVGSVGElement {
   const ns = "http://www.w3.org/2000/svg";

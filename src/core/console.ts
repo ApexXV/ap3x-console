@@ -1,6 +1,6 @@
 import { ChangeLog, type LoggedChange } from "./changes";
 import { Chrome } from "./chrome";
-import { el, chipNode, setTone, svgEl } from "./dom";
+import { el, chipNode, replaceKeepingScroll, setTone, svgEl } from "./dom";
 import { LayoutEditor } from "./editor";
 import { dlist, note, sec, stats } from "./detail";
 import { ageLabel, clockFormat, clockOf, dayOf, setClockFormat, TZ } from "./format";
@@ -220,12 +220,17 @@ export class Console {
       renderTicker(this.tickerNode, ticker, `${this.options.mode === "demo" ? "DEMO" : `REFRESH ${this.layout.refreshSeconds ?? 30}S`} · ${clockOf(new Date(now).toISOString())} · AP3XOPERATIONS.COM`);
     }
     if (log) this.restartRing();
-    if (this.detailId) this.buildDetail();
+    if (this.detailId) this.buildDetail(true);
   }
 
-  openDetail(panelId: string): void {
+  openDetail(panelId: string, section?: string): void {
     const panel = this.panels.find((p) => p.spec.id === panelId);
     if (panelId !== "changes" && panelId !== "sources" && !panel?.module.detail) return;
+    if (panel) {
+      const state = this.detailState.get(panelId) ?? {};
+      state.entrySection = section;
+      this.detailState.set(panelId, state);
+    }
     this.detailId = panelId;
     this.overlay.hidden = false;
     this.buildDetail();
@@ -392,7 +397,7 @@ export class Console {
     return this.overlay;
   }
 
-  private buildDetail(): void {
+  private buildDetail(keepScroll = false): void {
     const id = this.detailId;
     if (!id) return;
     let view: DetailView;
@@ -435,7 +440,8 @@ export class Console {
     const foot = el("footer", "detail-foot");
     foot.append(el("span", "", view.foot ?? ""), el("span", "", "ESC OR CLICK OUTSIDE TO CLOSE"));
     card.append(head, body, foot);
-    this.overlay.replaceChildren(card);
+    if (keepScroll) replaceKeepingScroll(this.overlay, card);
+    else this.overlay.replaceChildren(card);
   }
 
   // ---------------------------------------------------------------- runtime helpers
@@ -443,7 +449,8 @@ export class Console {
   private contextFor(panel: PanelInstance, states: Record<string, SourceState>, now: number): ModuleContext {
     const missing = (id: string): SourceState => ({ id, status: "unknown", data: null, ageMs: null, fetchedAt: null, seen: false });
     const sources = Object.fromEntries(panel.module.sources.map((s) => [s.id, states[s.id] ?? missing(s.id)]));
-    return { now, mode: this.options.mode, settings: { ...(panel.module.defaults ?? {}), ...(panel.spec.settings ?? {}) }, sources, stageWidth: this.layout.stage.width };
+    return { now, mode: this.options.mode, settings: { ...(panel.module.defaults ?? {}), ...(panel.spec.settings ?? {}) },
+      sources, stageWidth: this.layout.stage.width, openDetail: section => this.openDetail(panel.spec.id, section) };
   }
 
   private demoPayloads(now: number): Record<string, unknown> {

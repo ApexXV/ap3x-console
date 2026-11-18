@@ -1,0 +1,25 @@
+.module-sonarr-snapshot .panel-body { gap: .65em; }
+.snap-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); gap: .8em; flex: 1; min-height: 0; }
+.snap-scroll, .snap-evidence { min-width: 0; min-height: 0; overflow: auto; scrollbar-color: var(--line-strong) transparent; }
+.snap-scroll:focus-visible { outline: 2px solid var(--ap3x-cyan); outline-offset: -2px; }
+.snap-table { width: 100%; text-align: left; border-collapse: separate; border-spacing: 0; font-size: .78em; }
+.snap-table thead { position: sticky; top: 0; z-index: 1; background: var(--panel, #0a1923); }
+.snap-table thead th { font-size: .73em; color: var(--muted); letter-spacing: .075em; text-transform: uppercase; padding: .55em; border-bottom: 1px solid var(--line-strong); }
+.snap-table tbody td, .snap-table tbody th { padding: .52em .4em; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.snap-table tbody tr:nth-child(even) { background: rgba(23, 54, 65, .18); }
+.snap-table tbody th { max-width: 13em; }
+.snap-table tbody b { font-weight: 600; }
+.snap-table small { display: block; margin-top: .18em; color: var(--muted); font: .82em var(--mono); }
+.snap-table progress { display: block; width: 4.5em; height: .3em; accent-color: var(--ap3x-cyan); margin-top: .25em; }
+.snap-table .snap-bytes { white-space: nowrap; font: .88em var(--mono); }
+.snap-evidence { padding: .7em; background: rgba(12, 36, 47, .65); }
+.snap-evidence h4 { font: 600 .7em var(--display); text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+.snap-case { border-top: 1px solid var(--line); padding: .7em 0; }
+.snap-case:first-of-type { margin-top: .55em; }
+.snap-case-head, .snap-foot { display: flex; align-items: center; justify-content: space-between; gap: .5em; }
+.snap-case-head strong { font: 600 .95em var(--display); }
+.snap-case p { font-size: .77em; margin: .45em 0; line-height: 1.4; }
+.snap-case small { color: var(--muted); font-size: .62em; }
+.snap-emphasis { color: var(--warn); }
+.snap-foot { color: var(--muted); font-size: .7em; }
+.snap-foot button { flex: none; }

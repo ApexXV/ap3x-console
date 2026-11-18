@@ -81,6 +81,8 @@ export interface ModuleContext<S = Record<string, unknown>> {
   sources: Record<string, SourceState>;
   /** Stage width in px, so a module can choose denser rendering on small stages. */
   stageWidth: number;
+  /** Open this panel's detail, optionally starting at a module-defined section. */
+  openDetail?: (section?: string) => void;
 }
 
 export interface DetailView {
