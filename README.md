@@ -22,4 +22,6 @@ URL parameters: `layout=<id>` (a file in `layouts/`), `demo` (force demo data), 
 
 A build is static files with relative paths. On rackmain1, `console-release` builds `main` and serves it from the wall-ui folder as `/console/` (see [docs/RELEASE.md](docs/RELEASE.md)).
 
+The [saved Sonarr pilot](docs/SONARR-SNAPSHOT.md) has a dedicated local layout for inspecting Rack Steward transfer progress and episode coverage.
+
 Third-party code in the build: [Leaflet](https://leafletjs.com) 1.9 (BSD-2-Clause) for the radar map. Map tiles © OpenStreetMap contributors; radar from NOAA via the local-ops collector; aircraft from adsb.fi via the airspace collector.

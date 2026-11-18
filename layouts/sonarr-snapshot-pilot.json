@@ -1,0 +1,15 @@
+{
+  "id": "sonarr-snapshot-pilot",
+  "title": "COMMAND 57",
+  "stage": { "width": 1600, "height": 900, "fontSize": 24 },
+  "refreshSeconds": 3600,
+  "regionColumns": "minmax(0, 1fr)",
+  "clock": "12h",
+  "regions": [{
+    "id": "rackmain1",
+    "title": "RackMain1 · BBX Rack Steward",
+    "columns": "minmax(0, 1fr)",
+    "rows": "minmax(0, 1fr)",
+    "panels": [{ "id": "sonarr-transfers", "module": "sonarr-snapshot" }]
+  }]
+}
