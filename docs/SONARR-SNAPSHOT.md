@@ -4,6 +4,8 @@ On Command 57, open **Operations → Media Pipeline → Sonarr snapshot**. Selec
 
 The saved summary reads `/sonarr-snapshot-data/current.json` on the wall's existing origin. It shows the source observation date. Opening the panel reads archived data and does not contact Sonarr or qBittorrent. If a valid feed is unavailable, the normal Media Pipeline view still works.
 
+When Rack Steward publishes a Family Guy season 18 explanation, the report shows it beside the season's library and manifest checks. It includes the OpenAI model, generation time, evidence sources and a suggested manual follow-up. Command-57 reads the optional `/sonarr-snapshot-data/s18-explanation.json` from the same origin. The viewer checks the saved observation time, expected episodes, indexed count, library gaps, manifest coverage and citations before displaying the text. Earlier snapshots and observations without a matching explanation continue to show the transfer report. Model requests run in Rack Steward. Both the wall and the dedicated report are read-only.
+
 To supply the feed from the adjacent BBX Rack Steward project on ApexTower, run the following in the Console folder before starting the development server or building a release preview:
 
 ```powershell

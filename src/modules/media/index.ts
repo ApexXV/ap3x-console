@@ -3,7 +3,7 @@ import { note, paged, place, sec, stats } from "../../core/detail";
 import { ageText, bytesText, clockOf, dayLabel, dayOf, durationText, etaText, sinceMs } from "../../core/format";
 import { eastHour, tonightLabel } from "../../core/ticker";
 import { sonarrSnapshotModule } from "../sonarr-snapshot";
-import { parseSnapshot, type Snapshot } from "../sonarr-snapshot/parse";
+import type { Snapshot } from "../sonarr-snapshot/parse";
 import type { ChangeEvent, DetailHooks, ModuleManifest, TickerItem, Tone } from "../../core/types";
 import { diskStatus, failureText, isRunning, parseSessions, parseWorkloads, parseYoutube, retryWarnings, YT_PHASE,
   type Dated, type Importer, type QueueItem, type Sessions, type Stream, type Workloads, type Youtube } from "./parse";
@@ -166,7 +166,7 @@ export const mediaModule: ModuleManifest<MediaModel> = {
     const sessions = parseSessions(ctx.sources["media-sessions"]?.data, ctx.now);
     const youtube = parseYoutube(ctx.sources.youtube?.data, ctx.now);
     const streams = sessions?.status === "LIVE" && sessions.plexState === "LIVE" ? sessions.streamCount : null;
-    const snapshot = parseSnapshot(ctx.sources["sonarr-snapshot"]?.data);
+    const snapshot = sonarrSnapshotModule.model(ctx);
     return { workloads, sessions, youtube, streams, now: ctx.now, snapshot };
   },
 

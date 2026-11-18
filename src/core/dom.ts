@@ -48,20 +48,25 @@ export function privateText(node: HTMLElement): HTMLElement {
   return node;
 }
 
-/** Redraw a view while keeping its marked scroll region in place for the reader. */
+/** Restore independently named reading panes when the wall redraws an open report. */
 export function replaceKeepingScroll(parent: HTMLElement, ...children: Node[]): void {
   const selector = "[data-preserve-scroll]";
-  const previous = parent.querySelector<HTMLElement>(selector);
-  const top = previous?.scrollTop ?? 0;
-  const left = previous?.scrollLeft ?? 0;
-  const focused = previous === document.activeElement;
+  const positions = new Map<string, { top: number; left: number; focused: boolean }>();
+  for (const pane of parent.querySelectorAll<HTMLElement>(selector)) {
+    const focused = pane === document.activeElement;
+    if (pane.scrollTop || pane.scrollLeft || focused) {
+      positions.set(pane.dataset.preserveScroll!, { top: pane.scrollTop, left: pane.scrollLeft, focused });
+    }
+  }
   parent.replaceChildren(...children);
-  if (!previous || (!top && !left && !focused)) return;
-  const next = parent.querySelector<HTMLElement>(selector);
-  if (!next) return;
-  next.scrollTop = top;
-  next.scrollLeft = left;
-  if (focused) next.focus({ preventScroll: true });
+  if (!positions.size) return;
+  for (const pane of parent.querySelectorAll<HTMLElement>(selector)) {
+    const position = positions.get(pane.dataset.preserveScroll!);
+    if (!position) continue;
+    pane.scrollTop = position.top;
+    pane.scrollLeft = position.left;
+    if (position.focused) pane.focus({ preventScroll: true });
+  }
 }
 
 /** An SVG line chart of one or more series sharing a y scale (0..max), newest on the right. */

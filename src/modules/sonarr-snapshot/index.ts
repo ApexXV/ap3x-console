@@ -33,7 +33,7 @@ function transferRow(row: Transfer): HTMLTableRowElement {
 
 function roster(m: Snapshot): HTMLElement {
   const scroll = el("div", "snap-scroll");
-  scroll.dataset.preserveScroll = "";
+  scroll.dataset.preserveScroll = "transfer-table";
   scroll.tabIndex = 0; scroll.setAttribute("role", "region"); scroll.setAttribute("aria-label", "Flagged transfer table");
   const table = el("table", "snap-table"); table.setAttribute("aria-label", "Saved Sonarr transfers");
   const header = table.createTHead().insertRow();
@@ -47,6 +47,8 @@ function roster(m: Snapshot): HTMLElement {
 function evidence(m: Snapshot): HTMLElement {
   const wrap = el("aside", "snap-evidence");
   wrap.setAttribute("aria-label", "Family Guy verification");
+  wrap.dataset.preserveScroll = "season-evidence";
+  wrap.tabIndex = 0;
   wrap.append(privateText(el("h4", "", "Family Guy verification")));
   for (const s of m.resolved) {
     const resolved = s.indexed === s.total && s.queue_records === 0;
@@ -63,7 +65,18 @@ function evidence(m: Snapshot): HTMLElement {
     el("p", "", `Transfer lists · ${s.manifest_episodes}`),
     el("p", "snap-emphasis", s.unfillable_count ? `This transfer cannot fill ${s.unfillable_episodes}.` : "This transfer lists every gap."),
     el("small", "", `Manifest checked ${stamp(s.checked_at)}`));
-  wrap.append(block);
+  if (m.explanation) {
+    const ai = m.explanation;
+    const section = el("section", "snap-explanation");
+    section.setAttribute("aria-label", "OpenAI explanation for season 18");
+    section.append(el("h5", "", "OpenAI explanation"), privateText(el("p", "", ai.summary)),
+      el("h5", "", "Suggested manual follow-up"), privateText(el("p", "", ai.nextStep)),
+      el("small", "", `Based on Sonarr queue, Sonarr library and qBittorrent manifest · ${ai.model} · Generated ${stamp(ai.generatedAt)}`));
+    block.append(section);
+    wrap.insertBefore(block, wrap.querySelector(".snap-case"));
+  } else {
+    wrap.append(block);
+  }
   return wrap;
 }
 
@@ -76,8 +89,11 @@ const missing = () => el("p", "module-error", "Saved snapshot unavailable. Provi
 export const sonarrSnapshotModule: ModuleManifest<Snapshot | null> = {
   id: "sonarr-snapshot", title: "Sonarr transfers", version: "1.0.0",
   description: "Saved RackMain1 transfer progress, episode coverage and verified season gaps.",
-  sources: [{ id: "sonarr-snapshot", url: "/sonarr-snapshot-data/current.json", optional: true }],
-  model: ctx => parseSnapshot(ctx.sources["sonarr-snapshot"]?.data),
+  sources: [
+    { id: "sonarr-snapshot", url: "/sonarr-snapshot-data/current.json", optional: true },
+    { id: "sonarr-explanation", url: "/sonarr-snapshot-data/s18-explanation.json", optional: true },
+  ],
+  model: ctx => parseSnapshot(ctx.sources["sonarr-snapshot"]?.data, ctx.mode === "live" ? ctx.sources["sonarr-explanation"]?.data : undefined),
   chip: m => ({ label: m ? "SAVED SNAPSHOT" : "UNAVAILABLE", tone: m ? "info" : "warn" }),
   priority: m => ({ rank: 1, kicker: "RACK STEWARD", title: m ? "Saved Sonarr queue" : "Snapshot unavailable",
     summary: m ? `Observed ${stamp(m.observedAt)}` : "Local snapshot could not be read", posture: "READ ONLY", tone: m ? "info" : "warn" }),
