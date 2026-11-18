@@ -1,0 +1,15 @@
+{
+  "id": "rack-steward",
+  "title": "COMMAND 57",
+  "stage": { "width": 1600, "height": 900, "fontSize": 24 },
+  "refreshSeconds": 30,
+  "regionColumns": "minmax(0, 1fr)",
+  "clock": "12h",
+  "regions": [{
+    "id": "rackmain1",
+    "title": "RackMain1 · Operations",
+    "columns": "minmax(0, 1fr)",
+    "rows": "minmax(0, 1fr)",
+    "panels": [{ "id": "scheduled-health", "module": "rack-steward" }]
+  }]
+}
