@@ -4,6 +4,7 @@ import { ageText, bytesText, clockOf, dayLabel, dayOf, durationText, etaText, si
 import { eastHour, tonightLabel } from "../../core/ticker";
 import { sonarrSnapshotModule } from "../sonarr-snapshot";
 import { rackStewardModule, reportSummary } from "../rack-steward";
+import { transferCounts, transferPreview } from "../rack-steward/transfers";
 import type { Report } from "../rack-steward/parse";
 import type { Snapshot } from "../sonarr-snapshot/parse";
 import type { ChangeEvent, DetailHooks, ModuleManifest, TickerItem, Tone } from "../../core/types";
@@ -207,7 +208,10 @@ export const mediaModule: ModuleManifest<MediaModel> = {
     body.replaceChildren(counters, flow, now, ytLine);
     const reports = el("div", "media-reports");
     if (m.report) {
-      reports.append(button(`Rack Steward · ${reportSummary(m.report)} ›`, "Open the scheduled Rack Steward report", () => ctx.openDetail?.("rack-steward"), "media-line media-rack-report"));
+      const detail = m.report.transfers;
+      const label = detail?.client_status === "ok" && detail.rows.length && !m.report.overdue && !m.report.retained
+        ? `${detail.rows.length} flagged transfer${detail.rows.length === 1 ? "" : "s"}` : reportSummary(m.report);
+      reports.append(button(`Rack Steward · ${label} ›`, "Open the scheduled Rack Steward report", () => ctx.openDetail?.("rack-steward"), "media-line media-rack-report"));
     }
     if (m.snapshot) {
       const date = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", month: "short", day: "numeric" }).format(new Date(m.snapshot.observedAt));
@@ -250,7 +254,22 @@ export const mediaModule: ModuleManifest<MediaModel> = {
     const small = ctx.stageWidth < 4000;
     const perPage = small ? 4 : 5;
     const disk = diskStatus(yt);
-    const head = place(stats([
+    const head = place(el("div", "media-detail-overview"), "1 / -1");
+    const actions = el("nav", "media-detail-actions");
+    actions.setAttribute("aria-label", "Media reports");
+    actions.append(button("Live transfer report ›", "Open the scheduled Rack Steward report",
+      () => ctx.openDetail?.("rack-steward"), "btn media-live-transfers"));
+    const detail = m.report?.transfers;
+    const status = !m.report ? "Scheduled report unavailable" : m.report.overdue || m.report.retained ? reportSummary(m.report)
+      : !detail ? "Awaiting transfer detail" : detail.client_status === "unavailable" ? "Transfer detail unavailable"
+      : detail.client_status === "stale" ? "Last observed transfer list" : transferCounts(detail);
+    actions.append(el("span", "media-report-status", status));
+    if (detail?.observed_at) actions.append(el("time", "media-report-status", `Checked · ${clockOf(detail.observed_at)} ET`));
+    if (m.snapshot) actions.append(button("Saved Sonarr snapshot ›", "Open the saved transfer table", () => ctx.openDetail?.("sonarr-snapshot")));
+    head.append(actions);
+    const example = detail && transferPreview(detail);
+    if (example) head.append(example);
+    head.append(stats([
       ["DOWNLOADING", w.downloads], ["STALLED", w.stalled, w.stalled ? "bad" : "good"], ["IMPORTS PENDING", w.imports, w.imports ? "warn" : "good"],
       ["IMPORT BLOCKED", ms?.counts.import_blocked ?? null, ms?.counts.import_blocked ? "bad" : "good", ms?.stuckOverDay ? `${ms.stuckOverDay} STUCK OVER 1 DAY` : null],
       ["STREAMS", ms?.streamCount ?? m.streams, "info", [ms?.transcodes ? `${ms.transcodes} TRANSCODING` : null, ms?.bandwidth ? `${(ms.bandwidth / 1000).toFixed(1)} Mbps` : null].filter(Boolean).join(" · ") || null],
@@ -258,7 +277,7 @@ export const mediaModule: ModuleManifest<MediaModel> = {
       ["DOWNLOAD", w.speed ? `${(w.speed / 1_000_000).toFixed(1)} MB/s` : "IDLE"],
       ["YOUTUBE", yt ? (yt.running ? `${yt.running} RUNNING` : yt.failed ? `${yt.failed} STOPPED` : yt.held ? `${yt.held} HELD` : "IDLE") : null,
         yt?.failed ? "bad" : yt?.held ? "warn" : yt?.running ? "info" : "good"],
-    ], 8), "1 / -1");
+    ], 8));
 
     const streams = ms?.streams ?? [];
     const playing = place(sec(`NOW PLAYING${ms ? ` · PLEX ${ms.plexState}` : ""}`,
@@ -268,8 +287,6 @@ export const mediaModule: ModuleManifest<MediaModel> = {
 
     const queue = ms?.queue ?? [];
     const downloads = place(sec(`DOWNLOADS & IMPORTS${ms ? ` · SONARR ${ms.services.sonarr} · RADARR ${ms.services.radarr} · QBIT ${ms.services.qbittorrent}` : ""}`,
-      m.report ? button("Rack Steward report ›", "Open the scheduled Rack Steward report", () => ctx.openDetail?.("rack-steward")) : null,
-      m.snapshot ? button("Saved Sonarr transfers ›", "Open the saved transfer table", () => ctx.openDetail?.("sonarr-snapshot")) : null,
       ...(ms ? (queue.length ? paged(hooks.state, "queue", queue, perPage + 1, (q) => queueRow(q, m.now), hooks.rebuild) : [note("Sonarr and Radarr queues are empty.")])
         : [note(`MA001 workloads: ${w.state.toLowerCase()}`)])), "2", "2");
 

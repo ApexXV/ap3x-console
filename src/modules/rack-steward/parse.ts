@@ -1,4 +1,5 @@
 import { record } from "../../core/format";
+import { parseTransfers, type TransferDetail } from "./transfers";
 
 export const REPORT_MAX_AGE = 35 * 60_000;
 
@@ -31,6 +32,7 @@ export interface Report {
   issues: Issue[];
   recovered: Recovery[];
   analysis: { status: "current" | "pending" | "unavailable"; pending: number };
+  transfers: TransferDetail | null;
   overdue: boolean;
   retained: boolean;
 }
@@ -72,6 +74,7 @@ export function parseReport(v: unknown, now: number, retained = false): Report |
       || !record(v.analysis) || (v.analysis.status !== "current" && v.analysis.status !== "pending" && v.analysis.status !== "unavailable")
       || typeof v.analysis.pending !== "number" || !Number.isSafeInteger(v.analysis.pending) || v.analysis.pending < 0) return null;
   return { observedAt: v.observed_at, sources: v.sources, issues: v.issues, recovered: v.recovered,
+    transfers: parseTransfers(v.transfer_detail),
     analysis: { status: v.analysis.status, pending: v.analysis.pending },
     overdue: now - Date.parse(v.observed_at) > REPORT_MAX_AGE, retained };
 }
