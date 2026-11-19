@@ -52,10 +52,10 @@ describe("Scheduled Rack Steward reports", () => {
     incidents: [{ id: "vpn-restarting", title: "VPN restarting", detail: "Three restarts observed" }],
     recovery: { target: "glances", status: "healthy", reason: "Endpoint responding" },
     decision: { action: "defer", reason: "<b>Review host</b>", task: "triage", at: stamp },
-    sms: { status: "accepted", detail: "Provider accepted the update" },
+    sms: { status: "accepted", channel: "Home Assistant push", detail: "Provider accepted the update" },
     events: [{ at: stamp, kind: "health", message: "Inventory refreshed" }] };
 
-  it("exposes host status, bounded decisions and SMS through Media Pipeline when the media feed is offline", async () => {
+  it("exposes host status, bounded decisions and the phone delivery channel when the media feed is offline", async () => {
     const hub = new SourceHub(async url => url === operationsSource.url ? ops : null, () => now);
     const root = document.createElement("div");
     const wall = new Console({ root, hub, mode: "live", storage: null, clock: () => now, layout: {
@@ -65,10 +65,12 @@ describe("Scheduled Rack Steward reports", () => {
     try {
       await wall.refresh();
       root.querySelector<HTMLElement>("#panel-media h3")!.click();
-      root.querySelector<HTMLButtonElement>('button[title="Open rack health, recovery and SMS updates"]')!.click();
+      root.querySelector<HTMLButtonElement>('button[title="Open rack health, recovery and phone updates"]')!.click();
       const view = root.querySelector('.detail [aria-label="Rack operations"]')!;
       for (const value of ["VPN restarting", "Three restarts observed", "4 of 5 running", "70%", "Endpoint responding",
-        "triage · defer · <b>Review host</b>", "Provider accepted the update", "Inventory refreshed"]) expect(view.textContent).toContain(value);
+        "triage · defer · <b>Review host</b>", "Phone updates", "Home Assistant push", "Provider accepted the update",
+        "Inventory refreshed"]) expect(view.textContent).toContain(value);
+      expect(view.textContent).not.toContain("SMS");
       expect(view.querySelector("b, button, a, form")).toBeNull();
       root.querySelector<HTMLButtonElement>('button[title="Return to media pipeline"]')!.click();
       root.querySelector<HTMLButtonElement>(".media-live-transfers")!.click();

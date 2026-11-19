@@ -19,7 +19,7 @@ interface Operations {
   recovery: { target: string; status: string; reason: string };
   incidents?: { id: string; title: string; detail: string }[];
   decision?: { action: string; reason: string; at?: string; task?: string } | null;
-  sms: { status: string; detail?: string };
+  sms: { status: string; channel?: string | null; detail?: string };
   events: { at: string; kind: string; message: string }[];
 }
 
@@ -47,7 +47,8 @@ function valid(v: unknown): v is Operations {
     && text(r.target, 160) && text(r.status, 80) && text(r.reason, 600)
     && (d == null || (record(d) && text(d.action, 80) && text(d.reason, 600)
       && (d.at === undefined || timestamp(d.at)) && (d.task === undefined || text(d.task, 80))))
-    && text(sms.status, 80) && (sms.detail === undefined || text(sms.detail, 600))
+    && text(sms.status, 80) && (sms.channel == null || text(sms.channel, 100))
+    && (sms.detail === undefined || text(sms.detail, 600))
     && Array.isArray(v.events) && v.events.length <= 256
     && v.events.every(e => record(e) && timestamp(e.at) && text(e.kind, 80) && text(e.message, 600));
 }
@@ -112,7 +113,8 @@ export function operationsPane(feed: Feed): HTMLElement {
     if (at) assessment.lastElementChild!.append(el("small", "rack-attribution", displayTime(at)));
     facts.append(assessment);
   }
-  facts.append(row("SMS updates", words(sms.status)));
+  facts.append(row("Phone updates", words(sms.status)));
+  if (sms.channel) facts.append(row("Channel", words(sms.channel)));
   if (sms.detail) facts.append(row("Delivery", sms.detail));
   pane.append(facts);
   if (sample.events.length) {

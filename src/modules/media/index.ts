@@ -274,7 +274,7 @@ export const mediaModule: ModuleManifest<MediaModel> = {
       : detail.client_status === "stale" ? "Last observed transfer list" : transferCounts(detail);
     actions.append(el("span", "media-report-status", status));
     if (detail?.observed_at) actions.append(el("time", "media-report-status", `Checked · ${clockOf(detail.observed_at)} ET`));
-    if (ctx.mode === "live") actions.append(button("Rack operations ›", "Open rack health, recovery and SMS updates",
+    if (ctx.mode === "live") actions.append(button("Rack operations ›", "Open rack health, recovery and phone updates",
       () => ctx.openDetail?.("rack-operations")));
     if (m.snapshot) actions.append(button("Saved Sonarr snapshot ›", "Open the saved transfer table", () => ctx.openDetail?.("sonarr-snapshot")));
     head.append(actions);
