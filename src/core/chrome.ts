@@ -1,6 +1,7 @@
 import { el } from "./dom";
 import { TZ } from "./format";
 import type { Layout, RunMode } from "./types";
+import { OfficeWorkLight } from "./work-light";
 
 /* The wall's controls, for layouts that ask for them: the command dock (layout focus, refresh,
  * changes, motion, sources, open-wall drawer), the night and privacy toggles, keyboard shortcuts,
@@ -61,6 +62,7 @@ export class Chrome {
   private motionButton: HTMLButtonElement | null = null;
   private nightButton: HTMLButtonElement | null = null;
   private privacyButton: HTMLButtonElement | null = null;
+  private workLight: OfficeWorkLight | null = null;
   private modeLine: HTMLElement | null = null;
   private drawer: HTMLElement | null = null;
   focus = "balanced";
@@ -80,6 +82,10 @@ export class Chrome {
     this.privacyButton = button("", "Hide dollar amounts (P)", () => this.setPrivacy(this.host.root.dataset.privacy !== "on", true), "icon-toggle privacy-toggle");
     this.privacyButton.innerHTML = ICONS.eye + ICONS.eyeOff;
     wrap.append(this.privacyButton);
+    if (["command-57", "command-1080"].includes(this.host.layout.id)) {
+      this.workLight ??= new OfficeWorkLight(this.host.mode);
+      wrap.append(this.workLight.element, this.workLight.status);
+    }
     return wrap;
   }
 
@@ -146,6 +152,7 @@ export class Chrome {
 
   start(): void {
     const { layout, root } = this.host;
+    this.workLight?.start();
     if (layout.nightMode) this.loadSharedNightMode();
     this.setMotion((this.params.get("motion") as Motion) || (this.load("motion") as Motion) ||
       (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "low" : "full"), false);
@@ -167,6 +174,11 @@ export class Chrome {
       else if (name === "focus") this.setFocus(["balanced", ...layout.regions.map((r) => r.id)][Number(value)] ?? String(value));
       else if (name === "privacy") this.setPrivacy(Number(value) === 1 || value === true || value === "on", true);
     };
+  }
+
+  /** Stop the isolated lighting controller when its console is stopped. */
+  stop(): void {
+    this.workLight?.stop();
   }
 
   /* ---------------- motion ---------------- */

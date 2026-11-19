@@ -37,3 +37,18 @@ Use the same SSH key or deploy key the other repositories use on rackmain1.
 | Operations (1080p and up) | `http://rackmain1:3098/console/index.html?layout=ops-1080` |
 | Command 57 (57-inch wall) | `http://rackmain1:3098/console/index.html?layout=command-57` |
 | Command 57 on a 1080p screen | `http://rackmain1:3098/console/index.html?layout=command-1080` |
+
+## Refreshing the Command 57 wallpaper
+
+The Lively Command 57 shell normally shows `/console/index.html`; the separate
+`/command-57.html` is its legacy fallback. Updating that fallback does not update
+the Console. Use `console-release` for this application's changes.
+
+For the Office Light button, use the canonical origin required by the existing
+light backend: `http://192.168.4.115:3098/console/index.html?layout=command-57`.
+After a release, refresh the active Console frame so it fetches the new entrypoint
+and hashed assets. If a cached wallpaper needs a fresh URL, change its saved
+Console URL to the same entrypoint with a release-specific query key (for example
+`?office-light-RELEASE`). The shell retains that key and adds its current layout,
+motion, focus, and privacy choices. Lively CLI textbox assignments split on `=`,
+so that Console URL must not contain an additional `=` in its query.

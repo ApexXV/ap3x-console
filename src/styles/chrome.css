@@ -16,6 +16,20 @@ html.wall-night-mode .night-toggle .i-moon { display: block; }
 .console[data-privacy="on"] .privacy-toggle .i-eye-off { display: block; }
 .console[data-privacy="on"] .privacy-toggle { border-color: var(--ap3x-cyan); background: rgba(8, 126, 145, .5); }
 
+/* Office-only Work / Auto mode, beside the screen controls on Command layouts. */
+.work-light-toggle { flex: 0 0 auto; width: 2.5em; display: inline-flex; align-items: center; justify-content: center; gap: .1em; padding: .1em; }
+.work-light-toggle svg { flex: 0 0 18px; width: 18px; height: 18px; }
+.work-light-toggle .work-light-mode { font: 700 max(14px, .45em)/1 var(--mono); letter-spacing: 0; white-space: nowrap; }
+.work-light-toggle[data-state="work"] { border-color: var(--ap3x-cyan); background: rgba(8, 126, 145, .5); color: var(--ap3x-cyan); }
+.work-light-toggle:is([data-state="pending"], [data-state="error"], [data-state="unconfirmed"]) { border-color: var(--warn); color: var(--warn); }
+.work-light-toggle:is([data-state="pending"], [data-state="error"], [data-state="unconfirmed"]) svg { stroke: var(--warn); }
+.work-light-toggle:disabled { cursor: default; opacity: .6; }
+.work-light-toggle[data-state="pending"]:disabled { cursor: progress; opacity: 1; }
+.work-light-toggle:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.work-light-status { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.console:is([data-layout="command-57"], [data-layout="command-1080"]) .brand-toggles { flex: 0 0 auto; white-space: nowrap; }
+.console:is([data-layout="command-57"], [data-layout="command-1080"]) .brand-title { white-space: nowrap; }
+
 .dock { display: grid; gap: .35em; align-content: center; }
 .dock-row { display: flex; gap: .3em; align-items: center; }
 .dock-label { width: 6.3em; color: var(--dim); font-size: .5em; letter-spacing: .24em; }
