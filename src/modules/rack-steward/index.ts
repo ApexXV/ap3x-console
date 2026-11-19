@@ -1,8 +1,9 @@
 import { sec } from "../../core/detail";
-import { el, replaceKeepingScroll, tag } from "../../core/dom";
+import { el, privateText, replaceKeepingScroll, tag } from "../../core/dom";
 import { clockOf, dayOf } from "../../core/format";
 import type { ModuleManifest } from "../../core/types";
 import { parseReport, REPORT_MAX_AGE, type Issue, type Report } from "./parse";
+import { transferCounts, transferTable } from "./transfers";
 import "./report.css";
 
 const when = (stamp: string) => `${dayOf(stamp)} · ${clockOf(stamp)} ET`;
@@ -18,13 +19,30 @@ export function reportSummary(report: Report): string {
   return "No active issues";
 }
 
-function pane(title: string): HTMLElement {
-  const node = el("div", "rack-scroll");
-  node.dataset.preserveScroll = title;
+function pane(title: string, scroll = true): HTMLElement {
+  const node = el("div", scroll ? "rack-scroll" : "");
   node.setAttribute("aria-label", title);
   node.setAttribute("role", "region");
-  node.tabIndex = 0;
+  if (scroll) {
+    node.dataset.preserveScroll = title;
+    node.tabIndex = 0;
+  }
   return node;
+}
+
+function assessment(card: HTMLElement, issue: Issue): void {
+  if (issue.explanation) {
+    const ai = issue.explanation;
+    const summary = el("p", "", ai.summary);
+    const followUp = el("span", "", ai.next_step);
+    if (issue.id === "transfer_detail.review") { privateText(summary); privateText(followUp); }
+    card.append(el("p", "rack-attribution", `${ai.model} · ${when(ai.generated_at)}`), summary);
+    const step = el("p", "rack-follow-up");
+    step.append(el("strong", "", "Manual follow-up · "), followUp);
+    card.append(step);
+  } else if (issue.status === "active") {
+    card.append(el("p", "rack-muted", "Awaiting an explanation for this evidence."));
+  }
 }
 
 function issueCard(issue: Issue): HTMLElement {
@@ -45,16 +63,35 @@ function issueCard(issue: Issue): HTMLElement {
     facts.append(pair);
   }
   card.append(facts);
-  if (issue.explanation) {
-    const ai = issue.explanation;
-    card.append(el("p", "rack-attribution", `${ai.model} · ${when(ai.generated_at)}`), el("p", "", ai.summary));
-    const followUp = el("p", "rack-follow-up");
-    followUp.append(el("strong", "", "Manual follow-up · "), document.createTextNode(ai.next_step));
-    card.append(followUp);
-  } else if (!uncertain) {
-    card.append(el("p", "rack-muted", "Awaiting an explanation for this evidence."));
-  }
+  assessment(card, issue);
   return card;
+}
+
+function transferPane(detail: NonNullable<Report["transfers"]>, review?: Issue): HTMLElement {
+  const section = pane("Rack Steward transfer detail");
+  const heading = el("div", "rack-heading");
+  heading.append(el("h3", "", "Transfers needing attention"));
+  const stale = detail.client_status === "stale";
+  if (stale) heading.append(tag("Last observed", "warn"));
+  section.append(heading);
+  if (detail.client_status === "unavailable") {
+    section.append(el("p", "rack-muted", "qBittorrent detail unavailable."));
+    return section;
+  }
+  const status = detail.sonarr_status !== "ok" ? ` · Sonarr ${detail.sonarr_status}` : "";
+  section.append(el("p", "rack-muted", transferCounts(detail) + status
+    + (detail.observed_at ? ` · ${when(detail.observed_at)}` : "")));
+  if (review) {
+    const note = el("section", "rack-transfer-review");
+    note.setAttribute("aria-label", "Astra transfer assessment");
+    note.append(el("h4", "", review.status === "unconfirmed" ? "Last transfer assessment" : "Astra transfer assessment"));
+    assessment(note, review);
+    section.append(note);
+  }
+  if (detail.rows.length) section.append(transferTable(detail.rows));
+  else section.append(el("p", "rack-muted", stale ? "The last observation contained no stalled or errored transfers."
+    : "qBittorrent reported no stalled or errored transfers."));
+  return section;
 }
 
 function body(report: Report): HTMLElement {
@@ -62,18 +99,23 @@ function body(report: Report): HTMLElement {
   const header = el("div", "rack-byline");
   const names = [`Checked ${when(report.observedAt)}`, "Every 15 minutes", "Manual repairs"];
   header.append(el("p", "", names.join(" · ")));
+  if (!report.transfers) header.append(el("p", "", "Awaiting transfer detail for this report."));
   if (report.overdue || report.retained) header.append(tag(report.overdue ? "Report overdue" : "Last received report", "warn"));
   const grid = el("div", "rack-columns");
-  const incidents = pane("Rack Steward issues");
-  const active = report.issues.filter(i => i.status === "active");
-  const uncertain = report.issues.filter(i => i.status === "unconfirmed");
-  incidents.append(el("h4", "", `Active issues · ${active.length}`));
+  const incidents = pane("Rack Steward issues", !report.transfers);
+  const review = report.transfers && report.transfers.client_status !== "unavailable"
+    ? report.issues.find(i => i.id === "transfer_detail.review") : undefined;
+  const otherIssues = report.issues.filter(i => i !== review);
+  const active = otherIssues.filter(i => i.status === "active");
+  const uncertain = otherIssues.filter(i => i.status === "unconfirmed");
+  incidents.append(el("h4", "", `${review ? "Other active issues" : "Active issues"} · ${active.length}`));
   if (!active.length) incidents.append(el("p", "rack-muted",
-    report.sources.every(s => s.status === "ok") ? "The checks found no active issues." : "No issues confirmed by the available sources."));
+    review ? "No other active issues confirmed." : report.sources.every(s => s.status === "ok")
+      ? "The checks found no active issues." : "No issues confirmed by the available sources."));
   const order = { new: 0, changed: 1, ongoing: 2 };
   incidents.append(...active.sort((a, b) => order[a.change] - order[b.change]).map(issueCard));
   if (uncertain.length) incidents.append(el("h4", "", `Awaiting fresh evidence · ${uncertain.length}`), ...uncertain.map(issueCard));
-  const sources = pane("Rack Steward coverage");
+  const sources = pane("Rack Steward coverage", !report.transfers);
   const checked = report.sources.filter(s => s.status === "ok").length;
   sources.append(el("h4", "", `Source coverage · ${checked}/${report.sources.length}`));
   for (const source of report.sources) {
@@ -93,7 +135,12 @@ function body(report: Report): HTMLElement {
       sources.append(item);
     }
   }
-  grid.append(incidents, sources);
+  if (report.transfers) {
+    grid.classList.add("has-transfer-detail");
+    const sidebar = pane("Rack Steward health and coverage");
+    sidebar.append(incidents, sources);
+    grid.append(transferPane(report.transfers, review), sidebar);
+  } else grid.append(incidents, sources);
   wrap.append(header, grid);
   return wrap;
 }

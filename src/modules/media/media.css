@@ -9,6 +9,16 @@
 .media-reports { display: flex; flex: 0 0 auto; gap: .3em; min-width: 0; }
 .media-reports button { min-width: 0; max-width: 100%; padding: .12em .42em; font-family: var(--display); font-weight: 600; color: var(--ap3x-cyan); background: transparent; border: 1px solid var(--line-strong); cursor: pointer; }
 .media-reports button:hover, .media-reports button:focus-visible { background: rgba(8, 126, 145, .25); }
+.media-detail-overview { display: grid; gap: .45em; }
+.media-detail-actions { display: flex; flex-wrap: wrap; gap: .5em; align-items: center; }
+.media-detail-actions .media-live-transfers { background: var(--ap3x-teal); border-color: var(--ap3x-cyan); font-size: .7em; }
+.media-report-status { color: var(--muted); font: .58em var(--mono); }
+.media-detail-actions .media-report-status + button { margin-left: auto; }
+.media-transfer-example { display: flex; align-items: baseline; min-width: 0; gap: .55em; font-size: .68em; }
+.media-transfer-example b, .media-transfer-example span, .media-transfer-example small { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.media-transfer-example b { max-width: 40%; }
+.media-transfer-example span { max-width: 40%; }
+.media-transfer-example small { color: var(--muted); }
 
 .stream { cursor: pointer; transition: background .2s; }
 .stream:hover { background: rgba(8, 126, 145, .35); }

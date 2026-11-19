@@ -15,3 +15,13 @@
 .rack-facts div { display: flex; gap: .42em; overflow-wrap: anywhere; }
 .rack-facts dt { color: var(--muted); }
 .rack-facts dd { margin: 0; }
+.rack-columns.has-transfer-detail { grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr); }
+.rack-transfer-review { margin: .5em 0; padding: .4em .65em; border-left: 2px solid var(--ap3x-cyan); }
+.rack-transfer-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: .73em; }
+.rack-transfer-table th, .rack-transfer-table td { padding: .45em .55em; text-align: left; vertical-align: top; overflow-wrap: anywhere; border-bottom: 1px solid var(--line-strong); }
+.rack-transfer-table thead th { position: sticky; top: 0; z-index: 1; background: #102936; color: var(--text); font: 600 1em var(--display); }
+.rack-transfer-table thead th:nth-child(1) { width: 38%; }
+.rack-transfer-table thead th:nth-child(2) { width: 20%; }
+.rack-transfer-table small, .rack-library span { display: block; }
+.rack-transfer-table small { color: var(--muted); font: .86em var(--mono); margin-top: .24em; }
+.rack-library div + div { margin-top: .45em; }
