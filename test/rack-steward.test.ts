@@ -5,6 +5,7 @@ import { SourceHub } from "../src/core/sources";
 import { mediaModule } from "../src/modules/media";
 import { rackStewardModule, reportSummary } from "../src/modules/rack-steward";
 import { parseReport, REPORT_MAX_AGE } from "../src/modules/rack-steward/parse";
+import { operationsPane, operationsSource, readOperations } from "../src/modules/rack-steward/operations";
 
 const stamp = "2030-03-14T08:00:00Z";
 const now = Date.parse(stamp);
@@ -45,6 +46,57 @@ function render(feed: unknown) {
 
 describe("Scheduled Rack Steward reports", () => {
   beforeAll(() => registerModule(mediaModule));
+  const ops = { schemaVersion: 1, generatedAt: stamp, status: "degraded",
+    host: { cpuPercent: 4, memoryPercent: 70, load1: 1.2, filesystems: [{ mount: "/", usedPercent: 40 }] },
+    containers: { total: 5, running: 4, unhealthy: [], stopped: ["maintenance"] },
+    incidents: [{ id: "vpn-restarting", title: "VPN restarting", detail: "Three restarts observed" }],
+    recovery: { target: "glances", status: "healthy", reason: "Endpoint responding" },
+    decision: { action: "defer", reason: "<b>Review host</b>" },
+    sms: { status: "accepted", detail: "Provider accepted the update" },
+    events: [{ at: stamp, kind: "health", message: "Inventory refreshed" }] };
+
+  it("exposes host status, bounded decisions and SMS through Media Pipeline when the media feed is offline", async () => {
+    const hub = new SourceHub(async url => url === operationsSource.url ? ops : null, () => now);
+    const root = document.createElement("div");
+    const wall = new Console({ root, hub, mode: "live", storage: null, clock: () => now, layout: {
+      id: "command-57", title: "COMMAND 57", stage: { width: 5120, height: 1440, fontSize: 30 },
+      regionColumns: "1fr", regions: [{ id: "ops", title: "Operations", columns: "1fr", rows: "1fr", panels: [{ id: "media", module: "media" }] }],
+    } }).mount();
+    try {
+      await wall.refresh();
+      root.querySelector<HTMLElement>("#panel-media h3")!.click();
+      root.querySelector<HTMLButtonElement>('button[title="Open rack health, recovery and SMS updates"]')!.click();
+      const view = root.querySelector('.detail [aria-label="Rack operations"]')!;
+      for (const value of ["VPN restarting", "Three restarts observed", "4 of 5 running", "70%", "Endpoint responding",
+        "<b>Review host</b>", "Provider accepted the update", "Inventory refreshed"]) expect(view.textContent).toContain(value);
+      expect(view.querySelector("b, button, a, form")).toBeNull();
+      root.querySelector<HTMLButtonElement>('button[title="Return to media pipeline"]')!.click();
+      root.querySelector<HTMLButtonElement>(".media-live-transfers")!.click();
+      expect(root.querySelector(".detail .module-error")?.textContent).toContain("unavailable");
+      expect(root.querySelector('.detail [aria-label="Rack operations"]')?.textContent).toContain("Endpoint responding");
+    } finally { wall.stop(); }
+  });
+
+  it("labels lost, retained and overdue operation samples, including when host or Docker probes fail", async () => {
+    let time = now;
+    let offline = false;
+    let feed: unknown = { ...ops, host: { ...ops.host, cpuPercent: null }, containers: { ...ops.containers, total: null, running: null } };
+    const hub = new SourceHub(async () => { if (offline) throw new Error("offline"); return feed; }, () => time);
+    hub.register(operationsSource);
+    const renderOps = async () => operationsPane(readOperations({ sources: await hub.refresh(), now: time,
+      mode: "live", settings: {}, stageWidth: 3200 })).textContent;
+    expect(await renderOps()).toContain("Inventory unavailable");
+    offline = true;
+    expect(await renderOps()).toContain("Last received");
+    offline = false;
+    time += operationsSource.maxAgeMs! + 1;
+    expect(await renderOps()).toContain("Overdue");
+    for (const invalid of [{ ...ops, events: [{}] }, { ...ops, host: { ...ops.host, cpuPercent: 300 } },
+      { ...ops, generatedAt: new Date(time + 60_001).toISOString() }]) {
+      feed = invalid;
+      expect(await renderOps()).toContain("operations feed is unavailable");
+    }
+  });
   it("marks missing coverage, cached copies and overdue runs distinctly", () => {
     const data = { ...sample(), issues: [] };
     expect(reportSummary(parseReport(data, now)!)).toBe("Partial coverage");
