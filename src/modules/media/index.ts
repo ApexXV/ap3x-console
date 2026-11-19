@@ -5,6 +5,7 @@ import { eastHour, tonightLabel } from "../../core/ticker";
 import { sonarrSnapshotModule } from "../sonarr-snapshot";
 import { rackStewardModule, reportSummary } from "../rack-steward";
 import { transferCounts, transferPreview } from "../rack-steward/transfers";
+import { operationsPane, readOperations } from "../rack-steward/operations";
 import type { Report } from "../rack-steward/parse";
 import type { Snapshot } from "../sonarr-snapshot/parse";
 import type { ChangeEvent, DetailHooks, ModuleManifest, TickerItem, Tone } from "../../core/types";
@@ -240,6 +241,14 @@ export const mediaModule: ModuleManifest<MediaModel> = {
   chip: chipFor,
 
   detail(m, ctx, hooks) {
+    if (hooks.state.entrySection === "rack-operations") {
+      const pane = el("div", "rack-scroll");
+      pane.dataset.preserveScroll = "rack-operations";
+      pane.tabIndex = 0;
+      pane.append(operationsPane(readOperations(ctx)));
+      return { title: "Rack operations", columns: "minmax(0, 1fr)", rows: "minmax(0, 1fr)",
+        sections: [sec(null, button("‹ Media pipeline", "Return to media pipeline", () => ctx.openDetail?.()), pane)] };
+    }
     if (hooks.state.entrySection === "rack-steward" && rackStewardModule.detail) {
       const detail = rackStewardModule.detail(m.report, ctx, hooks);
       detail.sections[0]?.prepend(button("‹ Media pipeline", "Return to media pipeline", () => ctx.openDetail?.()));
@@ -265,6 +274,8 @@ export const mediaModule: ModuleManifest<MediaModel> = {
       : detail.client_status === "stale" ? "Last observed transfer list" : transferCounts(detail);
     actions.append(el("span", "media-report-status", status));
     if (detail?.observed_at) actions.append(el("time", "media-report-status", `Checked · ${clockOf(detail.observed_at)} ET`));
+    if (ctx.mode === "live") actions.append(button("Rack operations ›", "Open rack health, recovery and phone updates",
+      () => ctx.openDetail?.("rack-operations")));
     if (m.snapshot) actions.append(button("Saved Sonarr snapshot ›", "Open the saved transfer table", () => ctx.openDetail?.("sonarr-snapshot")));
     head.append(actions);
     const example = detail && transferPreview(detail);

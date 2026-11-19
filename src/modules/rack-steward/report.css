@@ -25,3 +25,10 @@
 .rack-transfer-table small, .rack-library span { display: block; }
 .rack-transfer-table small { color: var(--muted); font: .86em var(--mono); margin-top: .24em; }
 .rack-library div + div { margin-top: .45em; }
+.rack-ops { padding: .55em .65em; border-left: 2px solid var(--ap3x-cyan); background: rgba(16,41,54,.65); }
+.rack-ops-facts { margin: .55em 0 0; font-size: .76em; }
+.rack-ops-row { display: grid; grid-template-columns: minmax(5em, 1fr) 2.7fr; gap: .6em; padding: .21em 0; }
+.rack-ops-row dt { color: var(--muted); }
+.rack-ops-row dd { margin: 0; overflow-wrap: anywhere; }
+.rack-events { list-style: none; padding: 0; margin: 0; }
+.rack-events li { padding: .25em 0; border-top: 1px solid var(--line-strong); }

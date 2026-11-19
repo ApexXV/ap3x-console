@@ -4,6 +4,7 @@ import { clockOf, dayOf } from "../../core/format";
 import type { ModuleManifest } from "../../core/types";
 import { parseReport, REPORT_MAX_AGE, type Issue, type Report } from "./parse";
 import { transferCounts, transferTable } from "./transfers";
+import { operationsPane, operationsSource, readOperations } from "./operations";
 import "./report.css";
 
 const when = (stamp: string) => `${dayOf(stamp)} · ${clockOf(stamp)} ET`;
@@ -94,10 +95,16 @@ function transferPane(detail: NonNullable<Report["transfers"]>, review?: Issue):
   return section;
 }
 
-function body(report: Report): HTMLElement {
+function body(report: Report | null, ops: ReturnType<typeof readOperations>): HTMLElement {
   const wrap = el("div", "rack-report");
+  if (!report) {
+    const sidebar = pane("Rack Steward operations");
+    sidebar.append(operationsPane(ops));
+    wrap.append(unavailable(), sidebar);
+    return wrap;
+  }
   const header = el("div", "rack-byline");
-  const names = [`Checked ${when(report.observedAt)}`, "Every 15 minutes", "Manual repairs"];
+  const names = [`Checked ${when(report.observedAt)}`, "Every 15 minutes", "Manual repairs for media"];
   header.append(el("p", "", names.join(" · ")));
   if (!report.transfers) header.append(el("p", "", "Awaiting transfer detail for this report."));
   if (report.overdue || report.retained) header.append(tag(report.overdue ? "Report overdue" : "Last received report", "warn"));
@@ -116,6 +123,7 @@ function body(report: Report): HTMLElement {
   incidents.append(...active.sort((a, b) => order[a.change] - order[b.change]).map(issueCard));
   if (uncertain.length) incidents.append(el("h4", "", `Awaiting fresh evidence · ${uncertain.length}`), ...uncertain.map(issueCard));
   const sources = pane("Rack Steward coverage", !report.transfers);
+  sources.append(operationsPane(ops));
   const checked = report.sources.filter(s => s.status === "ok").length;
   sources.append(el("h4", "", `Source coverage · ${checked}/${report.sources.length}`));
   for (const source of report.sources) {
@@ -138,7 +146,7 @@ function body(report: Report): HTMLElement {
   if (report.transfers) {
     grid.classList.add("has-transfer-detail");
     const sidebar = pane("Rack Steward health and coverage");
-    sidebar.append(incidents, sources);
+    sidebar.append(sources, incidents);
     grid.append(transferPane(report.transfers, review), sidebar);
   } else grid.append(incidents, sources);
   wrap.append(header, grid);
@@ -151,17 +159,17 @@ export const rackStewardModule: ModuleManifest<Report | null> = {
   id: "rack-steward", title: "Rack Steward", version: "1.0.0",
   description: "Scheduled RackMain1 health observations and evidence-linked Astra explanations.",
   sources: [{ id: "rack-steward", url: "/rack-steward-data/current.json", optional: true,
-    stampField: "observed_at", maxAgeMs: REPORT_MAX_AGE }],
+    stampField: "observed_at", maxAgeMs: REPORT_MAX_AGE }, operationsSource],
   model(ctx) {
     const source = ctx.sources["rack-steward"];
     return ctx.mode === "live" ? parseReport(source?.data, ctx.now, source?.status === "retained") : null;
   },
   chip: m => ({ label: m ? reportSummary(m) : "Unavailable", tone: !m || m.overdue ? "warn" : "info" }),
-  render(panel, report) {
-    replaceKeepingScroll(panel, report ? body(report) : unavailable());
+  render(panel, report, ctx) {
+    replaceKeepingScroll(panel, body(report, readOperations(ctx)));
   },
-  detail(report) {
+  detail(report, ctx) {
     return { title: "Rack Steward", columns: "minmax(0, 1fr)", rows: "minmax(0, 1fr)",
-      sections: [sec(null, report ? body(report) : unavailable())] };
+      sections: [sec(null, body(report, readOperations(ctx)))] };
   },
 };
