@@ -18,7 +18,7 @@ interface Operations {
   containers: { running: number | null; total: number | null; unhealthy: string[]; stopped: string[] };
   recovery: { target: string; status: string; reason: string };
   incidents?: { id: string; title: string; detail: string }[];
-  decision?: { action: string; reason: string } | null;
+  decision?: { action: string; reason: string; at?: string; task?: string } | null;
   sms: { status: string; detail?: string };
   events: { at: string; kind: string; message: string }[];
 }
@@ -45,7 +45,8 @@ function valid(v: unknown): v is Operations {
     && (v.incidents === undefined || (Array.isArray(v.incidents) && v.incidents.length <= 256
       && v.incidents.every(i => record(i) && text(i.id, 160) && text(i.title, 200) && text(i.detail, 600))))
     && text(r.target, 160) && text(r.status, 80) && text(r.reason, 600)
-    && (d == null || (record(d) && text(d.action, 80) && text(d.reason, 600)))
+    && (d == null || (record(d) && text(d.action, 80) && text(d.reason, 600)
+      && (d.at === undefined || timestamp(d.at)) && (d.task === undefined || text(d.task, 80))))
     && text(sms.status, 80) && (sms.detail === undefined || text(sms.detail, 600))
     && Array.isArray(v.events) && v.events.length <= 256
     && v.events.every(e => record(e) && timestamp(e.at) && text(e.kind, 80) && text(e.message, 600));
@@ -105,7 +106,12 @@ export function operationsPane(feed: Feed): HTMLElement {
   if (containers.unhealthy.length) facts.append(row("Unhealthy", containers.unhealthy.join(", ")));
   if (containers.stopped.length) facts.append(row("Stopped", containers.stopped.join(", ")));
   facts.append(row("Recovery", `${recovery.target} · ${words(recovery.status)}`), row("Assessment", recovery.reason));
-  if (sample.decision) facts.append(row("Astra decision", `${words(sample.decision.action)} · ${sample.decision.reason}`));
+  if (sample.decision) {
+    const { action, reason, task, at } = sample.decision;
+    const assessment = row("Last Astra decision", [task && words(task), words(action), reason].filter(Boolean).join(" · "));
+    if (at) assessment.lastElementChild!.append(el("small", "rack-attribution", displayTime(at)));
+    facts.append(assessment);
+  }
   facts.append(row("SMS updates", words(sms.status)));
   if (sms.detail) facts.append(row("Delivery", sms.detail));
   pane.append(facts);

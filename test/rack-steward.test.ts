@@ -51,7 +51,7 @@ describe("Scheduled Rack Steward reports", () => {
     containers: { total: 5, running: 4, unhealthy: [], stopped: ["maintenance"] },
     incidents: [{ id: "vpn-restarting", title: "VPN restarting", detail: "Three restarts observed" }],
     recovery: { target: "glances", status: "healthy", reason: "Endpoint responding" },
-    decision: { action: "defer", reason: "<b>Review host</b>" },
+    decision: { action: "defer", reason: "<b>Review host</b>", task: "triage", at: stamp },
     sms: { status: "accepted", detail: "Provider accepted the update" },
     events: [{ at: stamp, kind: "health", message: "Inventory refreshed" }] };
 
@@ -68,7 +68,7 @@ describe("Scheduled Rack Steward reports", () => {
       root.querySelector<HTMLButtonElement>('button[title="Open rack health, recovery and SMS updates"]')!.click();
       const view = root.querySelector('.detail [aria-label="Rack operations"]')!;
       for (const value of ["VPN restarting", "Three restarts observed", "4 of 5 running", "70%", "Endpoint responding",
-        "<b>Review host</b>", "Provider accepted the update", "Inventory refreshed"]) expect(view.textContent).toContain(value);
+        "triage · defer · <b>Review host</b>", "Provider accepted the update", "Inventory refreshed"]) expect(view.textContent).toContain(value);
       expect(view.querySelector("b, button, a, form")).toBeNull();
       root.querySelector<HTMLButtonElement>('button[title="Return to media pipeline"]')!.click();
       root.querySelector<HTMLButtonElement>(".media-live-transfers")!.click();
