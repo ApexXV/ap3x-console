@@ -11,6 +11,15 @@ npm run build        # typecheck + production build into dist/
 
 URL parameters: `layout=<id>` (a file in `layouts/`), `demo` (force demo data), `runtime=live` (force live feeds on localhost), `privacy=on` (blur names and amounts; hover to peek).
 
+On the two Command 57 layouts, the bulb beside the screen controls switches the
+Office Light between **WORK** (100% cool white) and **AUTO** (the current Home
+Assistant lighting profile). This uses the existing Office-only control endpoint;
+the page holds no Home Assistant credentials. The button waits for fresh device
+confirmation, and shows pending, unavailable, and failed states. It never sends an
+automatic command retry. Light control is enabled only in live mode at
+`http://192.168.4.115:3098`, matching the installed backend origin guard; demo and
+other origins cannot operate the lamp.
+
 | Path | What it is |
 | --- | --- |
 | `src/core/` | Module and layout types, source polling and staleness, layout validation, the console runtime (stage, panels, priority banner, Changes log, detail overlay), detail-view building blocks |

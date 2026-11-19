@@ -158,6 +158,7 @@ export class Console {
   stop(): void {
     clearInterval(this.timer);
     clearTimeout(this.idleTimer);
+    this.chrome?.stop();
   }
 
   /** One refresh: fetch (or load demo payloads), rebuild every module model, render, rank, log. */
